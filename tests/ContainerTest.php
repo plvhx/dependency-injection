@@ -31,6 +31,11 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
 		$this->container->register(Dosen::class, 'dosen.service');
 	}
 
+	public function testInstanceOfContainer()
+	{
+		$this->assertInstanceOf(Container::class, $this->container);
+	}
+
 	public function testCanResolveMahasiswaDependency()
 	{
 		$mahasiswa = $this->container->get('mahasiswa.service');
