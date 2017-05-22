@@ -9,3 +9,13 @@ Features:
 
 Setter injection and method injection not yet implemented.
 Feel free to look, or clone it for your own needs.
+
+If you want to run unit tests:
+```
+vendor/bin/phpunit
+```
+
+If you need more verbose:
+```
+vendor/bin/phpunit --verbose
+```
