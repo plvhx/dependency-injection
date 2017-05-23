@@ -18,6 +18,21 @@ class Mahasiswa
 		$this->base = $base;
 	}
 
+	public function setFirstName($firstName)
+	{
+		$this->base->setFirstName($firstName);
+	}
+
+	public function setMiddleName($middleName)
+	{
+		$this->base->setMiddleName($middleName);
+	}
+
+	public function setLastName($lastName)
+	{
+		$this->base->setLastName($lastName);
+	}
+	
 	public function __toString()
 	{
 		return $this->base->unify();
