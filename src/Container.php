@@ -14,9 +14,14 @@ class Container
 	private $containerStack = array();
 
 	/**
-	 * @var \ReflectionClass
+	 * @var array
 	 */
-	private $reflection;
+	private $parameter = array();
+
+	/**
+	 * @var object
+	 */
+	private $activeInstance;
 
 	/**
 	 * Registering service into container stack.
@@ -31,37 +36,84 @@ class Container
 			);
 		}
 
-		return $this->constructorArgumentResolver($instance, $alias);
+		if (in_array($alias, array_keys($this->containerStack), true)) {
+			throw new \RuntimeException(
+				sprintf("Cannot redeclare service %s. Try another alias.", $alias)
+			);
+		}
+
+		$this->containerStack[$alias] = $this->resolve($instance, $alias)->get($alias);
+
+		$this->parameter = [];
+		
+		return $this;
 	}
+
+	public function addArgument($args)
+	{
+		if (!isset($args)) {
+			throw new \InvalidArgumentException(
+				sprintf("Parameter 1 of %s must be exist.", __METHOD__)
+			);
+		}
+
+		$this->parameter[] = $args;
+
+		return $this;
+	}
+
 
 	/**
 	 * Resolving all dependencies in the supplied class or object instance constructor.
 	 *
 	 * @return Container
 	 */
-	private function constructorArgumentResolver($instance, $alias)
+	public function make($instance, $alias)
 	{
-		$this->reflection = new \ReflectionClass($instance);
+		$reflection = new \ReflectionClass($instance);
 
-		if (!($this->reflection instanceof \ReflectionClass)) {
+		if (!($reflection instanceof \ReflectionClass)) {
 			throw new \RuntimeException(
-				"Unable to get an instance ReflectionClass."
+				"Unable to get an instance of ReflectionClass."
 			);
 		}
 
-		$constructor = $this->reflection->getConstructor();
-		$args = (empty($constructor->getParameters()) ? array() : $constructor->getParameters());
+		$constructor = $reflection->getConstructor();
 
-		foreach ($args as $key => $val) {
+		$this->parameter = (empty($constructor->getParameters())
+			? array()
+			: $constructor->getParameters());
+
+		foreach ($this->parameter as $key => $val) {
 			$class = $val->getClass();
 
 			if ($class !== null) {
 				$class = $class->getName();
-				$args[$key] = new $class;
+				$this->parameter[$key] = new $class;
 			}
 		}
 
-		$this->containerStack[$alias] = $this->reflection->newInstanceArgs($args);
+		$this->containerStack[$alias] = $reflection->newInstanceArgs($this->parameter);
+
+		return $this;
+	}
+
+	/**
+	 * Manually resolve class dependency.
+	 *
+	 * @return Container
+	 */
+	private function resolve($instance, $alias)
+	{
+		$reflection = new \ReflectionClass($instance);
+
+		if (!($reflection instanceof \ReflectionClass)) {
+			throw new \RuntimeException(
+				"Unable to get an instance of ReflectionClass"
+			);
+		}
+
+		$this->containerStack[$alias] = $reflection->newInstanceArgs($this->parameter);
 
 		return $this;
 	}
