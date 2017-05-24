@@ -54,4 +54,9 @@ class Base implements BaseInstance
 	{
 		return join(' ', [$this->firstName, $this->middleName, $this->lastName]);
 	}
+
+	public function __toString()
+	{
+		return $this->unify();
+	}
 }
