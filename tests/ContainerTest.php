@@ -13,84 +13,84 @@ use Experiments\DependencyInjection\Fixtures\Mahasiswa;
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
-	/**
-	 * @var Container
-	 */
-	private $container;
-
-	public function __construct()
+	public function testIfCanGetContainerInstance()
 	{
-		$this->container = new Container();
+		$container = new Container();
 
-		$this->registerRequiredDeps();
+		$this->assertInstanceOf(Container::class, $container);
 	}
 
-	private function registerRequiredDeps()
+	public function testIfCanAutoResolvingDependency()
 	{
-		$this->container->make(Mahasiswa::class, 'mahasiswa.service');
-		$this->container->make(Dosen::class, 'dosen.service');
-	}
+		$container = new Container();
 
-	public function testInstanceOfContainer()
-	{
-		$this->assertInstanceOf(Container::class, $this->container);
-	}
+		$this->assertInstanceOf(Container::class, $container);
 
-	public function testCanResolveMahasiswaDependency()
-	{
-		$mahasiswa = $this->container->get('mahasiswa.service');
-
-		$mahasiswa->setFirstName('Paulus');
-		$mahasiswa->setMiddleName('Gandung');
-		$mahasiswa->setLastName('Prakosa');
-
-		echo sprintf("%s" . PHP_EOL, (string)$mahasiswa);
-
-		$this->assertInstanceOf(Mahasiswa::class, $mahasiswa);
-	}
-
-	public function testCanResolveDosenDependency()
-	{
-		$dosen = $this->container->get('dosen.service');
-
-		$dosen->setFirstName('Yohanes');
-		$dosen->setMiddleName('Sunu');
-		$dosen->setLastName('Jatmika');
-
-		echo sprintf("%s" . PHP_EOL, (string)$dosen);
+		$dosen = $container->make(Dosen::class);
 
 		$this->assertInstanceOf(Dosen::class, $dosen);
+
+		$dosen->setFirstName('a');
+		$dosen->setMiddleName('b');
+		$dosen->setLastName('c');
+
+		echo sprintf("%s" . PHP_EOL, $dosen);
 	}
 
-	public function testCanManuallyResolveMahasiswaDependency()
+	public function testIfCanManuallyResolvingDependency()
 	{
-		$mahasiswa = $this->container
-			->addArgument(new Base())
-			->register(Mahasiswa::class, 'mahasiswa.manual.service')
-			->get('mahasiswa.manual.service');
+		$container = new Container();
 
-		$mahasiswa->setFirstName('Achmad');
-		$mahasiswa->setMiddleName('Muchlis');
-		$mahasiswa->setLastName('Fanani');
+		$this->assertInstanceOf(Container::class, $container);
 
-		echo sprintf("%s" . PHP_EOL, (string)$mahasiswa);
-
-		$this->assertInstanceOf(Mahasiswa::class, $mahasiswa);
-	}
-
-	public function testCanManuallyResolveDosenDependency()
-	{
-		$dosen = $this->container
-			->addArgument(new Base())
-			->register(Dosen::class, 'dosen.manual.service')
-			->get('dosen.manual.service');
-
-		$dosen->setFirstName('Yohanes');
-		$dosen->setMiddleName('Sunu');
-		$dosen->setLastName('Jatmika');
-
-		echo sprintf("%s" . PHP_EOL, (string)$dosen);
+		$dosen = $container->make(Dosen::class, array(Base::class));
 
 		$this->assertInstanceOf(Dosen::class, $dosen);
+
+		$dosen->setFirstName('a');
+		$dosen->setMiddleName('b');
+		$dosen->setLastName('c');
+
+		echo sprintf("%s" . PHP_EOL, $dosen);
+	}
+
+	public function testIfCanBindWithClosure()
+	{
+		$container = new Container();
+
+		$this->assertInstanceOf(Container::class, $container);
+
+		$container->bind(Dosen::class, function($container) {
+			return $container->make(Base::class);
+		});
+
+		$dosen = $container->make(Dosen::class);
+
+		$this->assertInstanceOf(Dosen::class, $dosen);
+
+		$dosen->setFirstName('Paulus');
+		$dosen->setMiddleName('Gandung');
+		$dosen->setLastName('Prakosa');
+
+		echo sprintf("%s" . PHP_EOL, $dosen);		
+	}
+
+	public function testIfCanBindWithoutClosure()
+	{
+		$container = new Container();
+
+		$this->assertInstanceOf(Container::class, $container);
+
+		$container->bind(Dosen::class, Base::class);
+
+		$dosen = $container->make(Dosen::class);
+
+		$this->assertInstanceOf(Dosen::class, $dosen);
+
+		$dosen->setFirstName('Paulus');
+		$dosen->setMiddleName('Gandung');
+		$dosen->setLastName('Prakosa');
+
+		echo sprintf("%s" . PHP_EOL, $dosen);		
 	}
 }
