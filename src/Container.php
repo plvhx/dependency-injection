@@ -11,12 +11,12 @@ class Container
 	/**
 	 * @var array
 	 */
-	private $containerStack = array();
+	private $bindings = array();
 
 	/**
 	 * @var array
 	 */
-	private $parameter = array();
+	private $resolved = array();
 
 	/**
 	 * @var object
@@ -24,119 +24,204 @@ class Container
 	private $activeInstance;
 
 	/**
-	 * Registering service into container stack.
-	 *
-	 * @return Container
-	 */
-	public function register($instance, $alias)
-	{
-		if (!is_string($instance) && !is_object($instance)) {
-			throw new \InvalidArgumentException(
-				sprintf("Parameter 1 of %s:%s must be a string or an object instance.", __CLASS__, __METHOD__)
-			);
-		}
-
-		if (in_array($alias, array_keys($this->containerStack), true)) {
-			throw new \RuntimeException(
-				sprintf("Cannot redeclare service %s. Try another alias.", $alias)
-			);
-		}
-
-		$this->containerStack[$alias] = $this->resolve($instance, $alias)->get($alias);
-
-		$this->parameter = [];
-		
-		return $this;
-	}
-
-	public function addArgument($args)
-	{
-		if (!isset($args)) {
-			throw new \InvalidArgumentException(
-				sprintf("Parameter 1 of %s must be exist.", __METHOD__)
-			);
-		}
-
-		$this->parameter[] = $args;
-
-		return $this;
-	}
-
-
-	/**
 	 * Resolving all dependencies in the supplied class or object instance constructor.
 	 *
-	 * @return Container
-	 */
-	public function make($instance, $alias)
-	{
-		$reflection = new \ReflectionClass($instance);
-
-		if (!($reflection instanceof \ReflectionClass)) {
-			throw new \RuntimeException(
-				"Unable to get an instance of ReflectionClass."
-			);
-		}
-
-		$constructor = $reflection->getConstructor();
-
-		$this->parameter = (empty($constructor->getParameters())
-			? array()
-			: $constructor->getParameters());
-
-		foreach ($this->parameter as $key => $val) {
-			$class = $val->getClass();
-
-			if ($class !== null) {
-				$class = $class->getName();
-				$this->parameter[$key] = new $class;
-			}
-		}
-
-		$this->containerStack[$alias] = $reflection->newInstanceArgs($this->parameter);
-
-		return $this;
-	}
-
-	/**
-	 * Manually resolve class dependency.
-	 *
-	 * @return Container
-	 */
-	private function resolve($instance, $alias)
-	{
-		$reflection = new \ReflectionClass($instance);
-
-		if (!($reflection instanceof \ReflectionClass)) {
-			throw new \RuntimeException(
-				"Unable to get an instance of ReflectionClass"
-			);
-		}
-
-		$this->containerStack[$alias] = $reflection->newInstanceArgs($this->parameter);
-
-		return $this;
-	}
-
-	/**
-	 * Get service from service container stack.
-	 *
+	 * @param $instance The class name.
+	 * @param $parameters List of needed class dependency.
 	 * @return object
 	 */
-	public function get($alias)
+	public function make($instance, $parameters = [])
 	{
-		if (!is_string($alias)) {
-			throw new \InvalidArgumentException(
-				sprintf("Parameter 1 of %s must be a string.", __METHOD__)
-			);
+		if ($this->isAbstractExists($instance)) {
+			return $this->resolve($instance, $this->getConcrete($instance));
 		}
 
-		if (!in_array($alias, array_keys($this->containerStack), true)) {
-			throw new \RuntimeException(
-				sprintf("Service named %s not found in the service container stack.", $alias)
-			);
+		return $this->resolve($instance, $parameters);
+	}
+
+	/**
+	 * Get list of unresolved class name from class binding stack.
+	 *
+	 * @return string
+	 */
+	protected function getAbstracts()
+	{
+		return array_keys($this->bindings);
+	}
+
+	/**
+	 * Determine if unresolved class name is exists.
+	 *
+	 * @param $abstract The unresolved class name.
+	 * @return bool
+	 */
+	public function isAbstractExists($abstract)
+	{
+		return isset($this->bindings[$abstract]);
+	}
+
+	/**
+	 * Get concrete list of dependencies based on supplied class name.
+	 *
+	 * @param $abstract The unresolved class name.
+	 * @return array
+	 */
+	public function getConcrete($abstract)
+	{
+		return ($this->isAbstractExists($abstract) ? $this->bindings[$abstract] : null);
+	}
+
+	/**
+	 * Resolve class dependencies in the supplied class name.
+	 *
+	 * @param $instance The class name.
+	 * @param $parameters The needed class dependency.
+	 * @return object
+	 */
+	protected function resolve($instance, $parameters = [])
+	{
+		$reflector = ReflectionClassFactory::create($instance)->getReflection();
+
+		if (!$this->hasConstructor($reflector)) {
+			return $this->resolveInstanceWithoutConstructor($reflector);
 		}
 
-		return $this->containerStack[$alias];
+		if (is_array($parameters) && empty(sizeof($parameters))) {
+			$constructorParams = $this->getMethodParameters($reflector, '__construct');
+
+			if (!is_null($constructorParams)) {
+				foreach ($constructorParams as $key => $value) {
+					$className = $value->getClass();
+
+					if ($className instanceof \ReflectionClass) {
+						$constructorParams[$key] = ReflectionClassFactory::create($className->getName())
+							->newInstance();
+					}
+				}
+
+				$resolved = $reflector->newInstanceArgs($constructorParams);
+			}
+		}
+		else if (is_array($parameters) && !empty(sizeof($parameters))) {
+			foreach ($parameters as $key => $value) {
+				if (is_string($value) && class_exists($value)) {
+					$parameters[$key] = ReflectionClassFactory::create($value)
+						->newInstance();
+				}
+				else {
+					$parameters[$key] = $value($this);
+				}
+			}
+
+			$resolved = $reflector->newInstanceArgs($parameters);
+		}
+
+		$this->markAsResolved($instance);
+
+		return $resolved;
+	}
+
+	/**
+	 * Determine if current reflection object has constructor.
+	 *
+	 * @param \ReflectionClass The current reflection class object.
+	 */
+	protected function hasConstructor(\ReflectionClass $refl)
+	{
+		return $refl->hasMethod('__construct'); 
+	}
+
+	/**
+	 * Resolving class name without constructor.
+	 *
+	 * @param \ReflectionClass An instance of \ReflectionClass
+	 */
+	protected function resolveInstanceWithoutConstructor(\ReflectionClass $refl)
+	{
+		return $refl->newInstanceWithoutConstructor();
+	}
+
+	/**
+	 * Get method parameters.
+	 *
+	 * @param \ReflectionClass $refl An reflection class instance.
+	 * @param $method The method name.
+	 * @return array
+	 */
+	protected function getMethodParameters(\ReflectionClass $refl, $method)
+	{
+		return ($refl->hasMethod($method) ? $refl->getMethod($method)->getParameters() : null);
+	}
+
+	/**
+	 * Mark resolved class name to true.
+	 *
+	 * @param $abstract The resolved class name.
+	 * @return void
+	 */
+	protected function markAsResolved($abstract)
+	{
+		if ($this->isAbstractExists($abstract)) {
+			$this->resolved[$abstract] = true;
+
+			unset($this->bindings[$abstract]);
+		}
+	}
+
+	/**
+	 * Bind service into binding container stack.
+	 *
+	 * @param string $abstract The unresolvable class name.
+	 * @param \Closure|string $concrete Closure or class name being bound to the class name.
+	 */
+	public function bind($abstract, $concrete)
+	{
+		if (!($concrete instanceof \Closure)) {
+			$concrete = $this->turnIntoResolvableClosure($abstract, $concrete);
+		}
+
+		$this->bindings[$abstract] = (isset($this->bindings[$abstract])
+			? array_push($this->bindings[$abstract], $concrete)
+			: array($concrete));
+	}
+
+	/**
+	 * Bind service into binding container stack if supplied class name
+	 * not being bound.
+	 *
+	 * @param string $abstract The unresolvable class name.
+	 * @param \Closure|string $concrete Closure or class name begin bound to the class name.
+	 */
+	public function bindIf($abstract, $concrete)
+	{
+		if (!$this->isBound($abstract)) {
+			$this->bind($abstract, $concrete);
+		}
+	}
+
+	/**
+	 * Determine if class name has been bound or not.
+	 *
+	 * @param string $abstract The unresolvable class name.
+	 * @return bool
+	 */
+	protected function isBound($abstract)
+	{
+		return $this->isAbstractExists($abstract);
+	}
+
+	/**
+	 * Turn class name into resolvable closure.
+	 *
+	 * @param $abstract The class name
+	 * @param $concrete Can be instance of \Closure or class name.
+	 * @return \Closure
+	 */
+	protected function turnIntoResolvableClosure($abstract, $concrete)
+	{
+		return function($container, $parameters = []) use ($abstract, $concrete) {
+			return ($abstract == $concrete ? $container->resolve($abstract)
+				: $container->resolve($concrete, $parameters));
+		};
 	}
 }
