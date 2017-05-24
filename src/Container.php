@@ -6,7 +6,9 @@
 
 namespace Experiments\DependencyInjection;
 
-class Container
+use \ArrayAccess;
+
+class Container implements \ArrayAccess
 {
 	/**
 	 * @var array
@@ -26,8 +28,8 @@ class Container
 	/**
 	 * Resolving all dependencies in the supplied class or object instance constructor.
 	 *
-	 * @param $instance The class name.
-	 * @param $parameters List of needed class dependency.
+	 * @param string $instance The class name.
+	 * @param array $parameters List of needed class dependency.
 	 * @return object
 	 */
 	public function make($instance, $parameters = [])
@@ -37,6 +39,40 @@ class Container
 		}
 
 		return $this->resolve($instance, $parameters);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function offsetExists($offset)
+	{
+		return $this->isBound($offset);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function offsetGet($offset)
+	{
+		return $this->make($offset);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function offsetSet($offset, $value)
+	{
+		$this->bind($offset, $value instanceof \Closure ? $value : function() use ($value) {
+			return $value;
+		});
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function offsetUnset($offset)
+	{
+		unset($this->bindings[$offset], $this->resolved[$offset]);
 	}
 
 	/**
@@ -52,7 +88,7 @@ class Container
 	/**
 	 * Determine if unresolved class name is exists.
 	 *
-	 * @param $abstract The unresolved class name.
+	 * @param string $abstract The unresolved class name.
 	 * @return bool
 	 */
 	public function isAbstractExists($abstract)
@@ -63,7 +99,7 @@ class Container
 	/**
 	 * Get concrete list of dependencies based on supplied class name.
 	 *
-	 * @param $abstract The unresolved class name.
+	 * @param string $abstract The unresolved class name.
 	 * @return array
 	 */
 	public function getConcrete($abstract)
@@ -74,8 +110,8 @@ class Container
 	/**
 	 * Resolve class dependencies in the supplied class name.
 	 *
-	 * @param $instance The class name.
-	 * @param $parameters The needed class dependency.
+	 * @param string $instance The class name.
+	 * @param array $parameters The needed class dependency.
 	 * @return object
 	 */
 	protected function resolve($instance, $parameters = [])
@@ -124,7 +160,7 @@ class Container
 	/**
 	 * Determine if current reflection object has constructor.
 	 *
-	 * @param \ReflectionClass The current reflection class object.
+	 * @param \ReflectionClass $refl The current reflection class object.
 	 */
 	protected function hasConstructor(\ReflectionClass $refl)
 	{
@@ -134,7 +170,7 @@ class Container
 	/**
 	 * Resolving class name without constructor.
 	 *
-	 * @param \ReflectionClass An instance of \ReflectionClass
+	 * @param \ReflectionClass $refl An instance of \ReflectionClass
 	 */
 	protected function resolveInstanceWithoutConstructor(\ReflectionClass $refl)
 	{
@@ -145,7 +181,7 @@ class Container
 	 * Get method parameters.
 	 *
 	 * @param \ReflectionClass $refl An reflection class instance.
-	 * @param $method The method name.
+	 * @param string $method The method name.
 	 * @return array
 	 */
 	protected function getMethodParameters(\ReflectionClass $refl, $method)
@@ -156,7 +192,7 @@ class Container
 	/**
 	 * Mark resolved class name to true.
 	 *
-	 * @param $abstract The resolved class name.
+	 * @param string $abstract The resolved class name.
 	 * @return void
 	 */
 	protected function markAsResolved($abstract)
@@ -213,8 +249,8 @@ class Container
 	/**
 	 * Turn class name into resolvable closure.
 	 *
-	 * @param $abstract The class name
-	 * @param $concrete Can be instance of \Closure or class name.
+	 * @param string $abstract The class name
+	 * @param \Closure|string $concrete Can be instance of \Closure or class name.
 	 * @return \Closure
 	 */
 	protected function turnIntoResolvableClosure($abstract, $concrete)
