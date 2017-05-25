@@ -18,7 +18,7 @@ class ReflectionClassFactory
 		$this->reflection = new \ReflectionClass($instance);
 
 		if (!($this->reflection instanceof \ReflectionClass)) {
-			throw new \RuntimeException(
+			throw Exception\ReflectionExceptionFactory::reflectionInternal(
 				"Unable to get instance from ReflectionClass."
 			);
 		}
@@ -166,7 +166,7 @@ class ReflectionClassFactory
 	public function hasConstant($name)
 	{
 		if (!is_string($name)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be a string.", __METHOD__)
 			);
 		}
@@ -177,7 +177,7 @@ class ReflectionClassFactory
 	public function hasMethod($name)
 	{
 		if (!is_string($name)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be a string.", __METHOD__)
 			);
 		}
@@ -188,7 +188,7 @@ class ReflectionClassFactory
 	public function hasProperty($name)
 	{
 		if (!is_string($name)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be a string.", __METHOD__)
 			);
 		}
@@ -199,7 +199,7 @@ class ReflectionClassFactory
 	public function implementsInterface($interface)
 	{
 		if (!is_string($interface)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be a string.", __METHOD__)
 			);
 		}
@@ -235,7 +235,7 @@ class ReflectionClassFactory
 	public function isInstance($object)
 	{
 		if (!is_object($object)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be an object.", __METHOD__)
 			);
 		}
@@ -266,7 +266,7 @@ class ReflectionClassFactory
 	public function isSubclassOf($class)
 	{
 		if (!is_string($class)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be a string.", __METHOD__)
 			);
 		}
@@ -292,7 +292,7 @@ class ReflectionClassFactory
 	public function newInstanceArgs($args)
 	{
 		if (!is_array($args)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be an array.", __METHOD__)
 			);
 		}
@@ -308,7 +308,7 @@ class ReflectionClassFactory
 	public function setStaticPropertyValue($name, $value)
 	{
 		if (!is_string($name) || !is_string($value)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 and 2 of %s must be a string.", __METHOD__)
 			);
 		}
