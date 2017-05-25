@@ -116,7 +116,7 @@ class Container implements \ArrayAccess
 	 */
 	protected function resolve($instance, $parameters = [])
 	{
-		$reflector = ReflectionClassFactory::create($instance)->getReflection();
+		$reflector = Internal\ReflectionClassFactory::create($instance);
 
 		if (!$this->hasConstructor($reflector)) {
 			return $this->resolveInstanceWithoutConstructor($reflector);
@@ -126,45 +126,96 @@ class Container implements \ArrayAccess
 			$constructorParams = $this->getMethodParameters($reflector, '__construct');
 
 			if (!is_null($constructorParams)) {
-				foreach ($constructorParams as $key => $value) {
-					$className = $value->getClass();
-
-					if ($className instanceof \ReflectionClass) {
-						$constructorParams[$key] = ReflectionClassFactory::create($className->getName())
-							->newInstance();
-					}
-				}
-
-				$resolved = $reflector->newInstanceArgs($constructorParams);
+				$params = $this->resolveMethodParameters($constructorParams);
 			}
 		}
 		else if (is_array($parameters) && !empty(sizeof($parameters))) {
-			foreach ($parameters as $key => $value) {
-				if (is_string($value) && class_exists($value)) {
-					$parameters[$key] = ReflectionClassFactory::create($value)
-						->newInstance();
-				}
-				else {
-					$parameters[$key] = $value($this);
-				}
-			}
-
-			$resolved = $reflector->newInstanceArgs($parameters);
+			$params = $this->resolveMethodParameters($parameters);
 		}
 
 		$this->markAsResolved($instance);
 
-		return $resolved;
+		return $reflector->newInstanceArgs($params);
+	}
+
+	/**
+	 * Resolve method parameters.
+	 *
+	 * @param array $params The unresolvable method.
+	 * @return array
+	 */
+	protected function resolveMethodParameters($params = [])
+	{
+		if (!is_array($params)) {
+			throw new \InvalidArgumentException(
+				sprintf("Parameter 1 of %s must be an array.", __METHOD__)
+			);
+		}
+
+		foreach ($params as $key => $value) {
+			if ($value instanceof \ReflectionParameter) {
+				$className = $value->getClass();
+
+				if ($className instanceof \ReflectionClass) {
+					$params[$key] = Internal\ReflectionClassFactory::create($className->getName())
+						->newInstance();
+				}
+			}
+			else {
+				if (is_string($value) && class_exists($value)) {
+					$params[$key] = Internal\ReflectionClassFactory::create($value)->newInstance();
+				}
+				else if ($value instanceof \Closure) {
+					$params[$key] = $value($this);
+				}
+			}
+		}
+
+		return $params;
 	}
 
 	/**
 	 * Determine if current reflection object has constructor.
 	 *
 	 * @param \ReflectionClass $refl The current reflection class object.
+	 * @return boolean
 	 */
-	protected function hasConstructor(\ReflectionClass $refl)
+	public function hasConstructor(Internal\ReflectionClassFactory $refl)
 	{
 		return $refl->hasMethod('__construct'); 
+	}
+
+	/**
+	 * Determine if unresolvable class name has invokable.
+	 *
+	 * @param \ReflectionClass $refl The current reflection class object.
+	 * @return boolean
+	 */
+	public function isInvokable(Internal\ReflectionClassFactory $refl)
+	{
+		return $refl->hasMethod('__invoke') || $refl->getMethod('__invoke')->isPublic();
+	}
+
+	/**
+	 * Determine if unresolvable class name has cloneable.
+	 *
+	 * @param \ReflectionClass $refl The current reflection class object.
+	 * @return boolean
+	 */
+	public function isCloneable(Internal\ReflectionClassFactory $refl)
+	{
+		return $refl->hasMethod('__clone') || $refl->getMethod('__clone')->isPublic();
+	}
+
+	/**
+	 * Determine if unresolvable class name has serializable.
+	 *
+	 * @param \ReflectionClass $refl The current reflection class object.
+	 * @return boolean
+	 */
+	public function isSerializable(Internal\ReflectionClassFactory $refl)
+	{
+		return $refl->hasMethod('__sleep') || $refl->getMethod('__sleep')->isPublic();
 	}
 
 	/**
@@ -172,7 +223,7 @@ class Container implements \ArrayAccess
 	 *
 	 * @param \ReflectionClass $refl An instance of \ReflectionClass
 	 */
-	protected function resolveInstanceWithoutConstructor(\ReflectionClass $refl)
+	protected function resolveInstanceWithoutConstructor(Internal\ReflectionClassFactory $refl)
 	{
 		return $refl->newInstanceWithoutConstructor();
 	}
@@ -184,7 +235,7 @@ class Container implements \ArrayAccess
 	 * @param string $method The method name.
 	 * @return array
 	 */
-	protected function getMethodParameters(\ReflectionClass $refl, $method)
+	protected function getMethodParameters(Internal\ReflectionClassFactory $refl, $method)
 	{
 		return ($refl->hasMethod($method) ? $refl->getMethod($method)->getParameters() : null);
 	}
@@ -210,8 +261,12 @@ class Container implements \ArrayAccess
 	 * @param string $abstract The unresolvable class name.
 	 * @param \Closure|string $concrete Closure or class name being bound to the class name.
 	 */
-	public function bind($abstract, $concrete)
+	public function bind($abstract, $concrete = null)
 	{
+		if (is_null($concrete)) {
+			$concrete = $abstract;
+		}
+
 		if (!($concrete instanceof \Closure)) {
 			$concrete = $this->turnIntoResolvableClosure($abstract, $concrete);
 		}
@@ -236,12 +291,35 @@ class Container implements \ArrayAccess
 	}
 
 	/**
+	 * Call defined instance.
+	 *
+	 * @param string $instance The class name to invoke/call.
+	 * @param array $args The class name __invoke method argument.
+	 * @return mixed|void
+	 */
+	public function callInstance($instance, $args = [])
+	{
+		if (!$this->isAbstractExists($instance)) {
+			$this->bind($instance);
+		}
+
+		$current = $this->make($instance);
+		$reflector = Internal\ReflectionClassFactory::create($current);
+
+		if ($this->isInvokable($reflector)) {
+			$this->markAsResolved($instance);
+
+			return call_user_func_array([$current, '__invoke'], $args);
+		}
+	}
+
+	/**
 	 * Determine if class name has been bound or not.
 	 *
 	 * @param string $abstract The unresolvable class name.
 	 * @return bool
 	 */
-	protected function isBound($abstract)
+	public function isBound($abstract)
 	{
 		return $this->isAbstractExists($abstract);
 	}
