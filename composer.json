@@ -1,4 +1,22 @@
 {
+	"name": "gandung/dependency-injection",
+	"description": "A dependency injection container",
+	"keywords": ["container", "dependency-injection", "dependency-manager"],
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Paulus Gandung Prakosa",
+			"email": "rvn.plvhx@gmail.com"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"DependencyInjection\\": "src/"
+		}
+	},
+	"require": {
+		"php": ">=5.5.0"
+	},
     "require-dev": {
         "phpunit/phpunit": "~4.0"
     }
