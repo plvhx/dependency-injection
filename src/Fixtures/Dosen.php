@@ -37,4 +37,9 @@ class Dosen
 	{
 		return $this->base->unify();
 	}
+
+	public function __invoke($name)
+	{
+		echo sprintf("%s" . PHP_EOL, $name);
+	}
 }
