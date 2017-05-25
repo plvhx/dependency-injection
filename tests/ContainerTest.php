@@ -93,4 +93,17 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
 
 		echo sprintf("%s" . PHP_EOL, $dosen);		
 	}
+
+	public function testIfInstanceIsInvokable()
+	{
+		$container = new Container();
+
+		$this->assertInstanceOf(Container::class, $container);
+
+		$container->bind(Dosen::class, function($container) {
+			return $container->make(Base::class);
+		});
+
+		$container->callInstance(Dosen::class, array('Yohanes Sunu Jatmika'));
+	}
 }
