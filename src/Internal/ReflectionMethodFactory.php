@@ -14,12 +14,18 @@ class ReflectionMethodFactory extends \ReflectionFunctionAbstract
 	public function __construct($class, $name)
 	{
 		if (!is_string($class) || !is_object($class)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be either class name or object.", __METHOD__)
 			);
 		}
 
 		$this->reflectionMethod = new \ReflectionMethod($class, $name);
+
+		if (!($this->reflectionMethod instanceof \ReflectionMethod)) {
+			throw Exception\ReflectionExceptionFactory::reflectionInternal(
+				"Unable to get an instance of \\ReflectionMethod."
+			);
+		}
 	}
 
 	public static function create($class, $name)
@@ -58,7 +64,7 @@ class ReflectionMethodFactory extends \ReflectionFunctionAbstract
 		return ($prototype instanceof \ReflectionMethod ? $prototype : null);
 	}
 
-	public function invoke($object, ...)
+	public function invoke($object)
 	{
 		return call_user_func_array([$this->reflectionMethod, 'invoke'],
 			array_slice(func_get_args(), 1));
@@ -67,7 +73,7 @@ class ReflectionMethodFactory extends \ReflectionFunctionAbstract
 	public function invokeArgs($object, $args = [])
 	{
 		if (!is_array($args)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be an array.", __METHOD__)
 			);
 		}
@@ -118,7 +124,7 @@ class ReflectionMethodFactory extends \ReflectionFunctionAbstract
 	public function setAccessible($accessible)
 	{
 		if (!is_bool($accessible)) {
-			throw new \InvalidArgumentException(
+			throw Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be a boolean.", __METHOD__)
 			);
 		}
