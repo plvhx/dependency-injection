@@ -19,12 +19,7 @@ class Container implements \ArrayAccess
 	 * @var array
 	 */
 	private $resolved = array();
-
-	/**
-	 * @var object
-	 */
-	private $activeInstance;
-
+	
 	/**
 	 * Resolving all dependencies in the supplied class or object instance constructor.
 	 *
@@ -38,7 +33,8 @@ class Container implements \ArrayAccess
 			return $this->resolve($instance, $this->getConcrete($instance));
 		}
 
-		return $this->resolve($instance, $parameters);
+		return $this->resolve($instance, is_array($parameters) ? $parameters
+			: array_slice(func_get_args(), 1));
 	}
 
 	/**
@@ -94,6 +90,25 @@ class Container implements \ArrayAccess
 	public function isAbstractExists($abstract)
 	{
 		return isset($this->bindings[$abstract]);
+	}
+
+	/**
+	 * Determine if concrete dependency is exists.
+	 *
+	 * @param mixed $concrete The concrete dependency.
+	 * @return bool
+	 */
+	public function isConcreteExists($concrete)
+	{
+		foreach (array_values($this->bindings) as $value) {
+			if (in_array($concrete, $value, true)) {
+				$isConcreteExists = true;
+
+				break;
+			}
+		}
+
+		return (isset($isConcreteExists) ? $isConcreteExists : false);
 	}
 
 	/**
@@ -166,7 +181,7 @@ class Container implements \ArrayAccess
 					$params[$key] = Internal\ReflectionClassFactory::create($value)->newInstance();
 				}
 				else if ($value instanceof \Closure) {
-					$params[$key] = $value($this);
+					$params[$key] = ($this->isConcreteExists($value) ? $value($this) : $value);
 				}
 			}
 		}
