@@ -2,9 +2,7 @@
 
 namespace Experiments\DependencyInjection\Internal;
 
-use \ReflectionFunctionAbstract;
-
-class ReflectionFunctionFactory extends \ReflectionFunctionAbstract
+class ReflectionFunctionFactory
 {
 	/**
 	 * @var \ReflectionFunction
