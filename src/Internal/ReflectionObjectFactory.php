@@ -2,9 +2,7 @@
 
 namespace Experiments\DependencyInjection\Internal;
 
-use \ReflectionClass;
-
-class ReflectionObjectFactory extends \ReflectionClass
+class ReflectionObjectFactory
 {
 	/**
 	 * @var \ReflectionObject
@@ -38,7 +36,7 @@ class ReflectionObjectFactory extends \ReflectionClass
 		return \ReflectionObject::export($object, $return);
 	}
 
-	public function getReflectionObject()
+	public function getReflector()
 	{
 		return $this->reflectionObject;
 	}
