@@ -24,6 +24,9 @@ class FunctionInvoker implements InvokerInterface
 		$this->function = $function;
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function invoke()
 	{
 		return call_user_func_array(
@@ -31,6 +34,9 @@ class FunctionInvoker implements InvokerInterface
 		);
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function invokeArgs($args = [])
 	{
 		if (!is_array($args)) {
