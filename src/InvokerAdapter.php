@@ -20,11 +20,17 @@ class InvokerAdapter implements InvokerAdapterInterface
 		$this->invoker = $invoker;
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function invoke()
 	{
 		return call_user_func_array([$this->invoker, 'invoke'], func_get_args());
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function invokeArgs($args = [])
 	{
 		return $this->invoker->invokeArgs($args);
