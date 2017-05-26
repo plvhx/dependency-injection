@@ -16,7 +16,7 @@ class MethodInvoker implements InvokerInterface
 
 	public function __construct($object, $method)
 	{
-		if (!is_object($object) || !is_string($object)) {
+		if (!is_object($object) && !is_string($object)) {
 			throw Internal\Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be either object or existing class name.",
 					__METHOD__)
@@ -29,35 +29,41 @@ class MethodInvoker implements InvokerInterface
 			);
 		}
 
-		$this->object = (is_string($this->object) && class_exists($this->object)
-			? Internal\ReflectionClassFactory::create($this->object)->newInstance()
-			: $this->object);
+		$this->object = (is_string($object) && class_exists($object)
+			? Internal\ReflectionClassFactory::create($object)->newInstance()
+			: $object);
 
-		if (!Internal\ReflectionObjectFactory::create($this->object)->hasMethod($this->method)) {
+		$reflector = Internal\ReflectionObjectFactory::create($this->object)
+			->getReflector();
+
+		if (!$reflector->hasMethod($method)) {
 			throw Internal\Exception\ReflectionExceptionFactory::runtime(
-				sprintf("Class %s doesn't have a method named %s",
-					Internal\ReflectionObjectFactory::create($this->object)->getName(),
-					$this->method)
+				sprintf("Class %s doesn't have a method named %s", $reflector->getName(), $method)
 			);
 		}
 
-		$this->object = $object;
 		$this->method = $method;
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function invoke()
 	{
 		$methodReflector = Internal\ReflectionObjectFactory::create($this->object)
+			->getReflector()
 			->getMethod($this->method);
 
-		return call_user_func_array(
-			[$methodReflector->getMethod($this->method), 'invoke']
-			[$this->object, func_get_args()]);
+		return call_user_func_array([$methodReflector, 'invoke'], [$this->object, func_get_args()]);
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function invokeArgs($args = [])
 	{
 		return Internal\ReflectionObjectFactory::create($this->object)
+			->getReflector()
 			->getMethod($this->method)
 			->invokeArgs($this->object, $args);
 	}
