@@ -4,7 +4,7 @@
  * (c) Paulus Gandung Prakosa (rvn.plvhx@gmail.com)
  */
 
-namespace Experiments\DependencyInjection\Internal;
+namespace DependencyInjection\Internal;
 
 class ReflectionClassFactory
 {
