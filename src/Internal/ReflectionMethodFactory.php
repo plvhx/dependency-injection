@@ -64,8 +64,7 @@ class ReflectionMethodFactory
 
     public function invoke($object)
     {
-        return call_user_func_array([$this->reflectionMethod, 'invoke'],
-            array_slice(func_get_args(), 1));
+        return call_user_func_array([$this->reflectionMethod, 'invoke'], array_slice(func_get_args(), 1));
     }
 
     public function invokeArgs($object, $args = [])
