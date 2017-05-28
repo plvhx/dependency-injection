@@ -1,6 +1,7 @@
 # Simple Dependency Injection Experiment
 
 [![SensioLabsInsight](https://insight.sensiolabs.com/projects/14e50be8-c441-4d03-b65d-cb07e33c0672/small.png)](https://insight.sensiolabs.com/projects/14e50be8-c441-4d03-b65d-cb07e33c0672)
+[![Build Status](https://travis-ci.org/plvhx/dependency-injection.svg?branch=master)](https://travis-ci.org/plvhx/dependency-injection)
 
 This is my simple dependency injection experiment in PHP
 
