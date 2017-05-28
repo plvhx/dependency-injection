@@ -429,7 +429,7 @@ class Container implements \ArrayAccess
      */
     protected function turnIntoResolvableClosure($abstract, $concrete)
     {
-        return function ($container, $parameters = []) use ($abstract, $concrete) {
+        return function (Container $container, $parameters = []) use ($abstract, $concrete) {
             return ($abstract == $concrete ? $container->resolve($abstract)
                 : $container->resolve($concrete, $parameters));
         };
