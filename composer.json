@@ -27,6 +27,7 @@
 	"require-dev": {
 	    "phpunit/phpunit": "~4.0",
 	    "squizlabs/php_codesniffer": "^2.7.0",
-	    "phpstan/phpstan": "^0.6.4"
+	    "phpstan/phpstan": "^0.6.4",
+	    "satooshi/php-coveralls": "dev-master"
 	}
 }
