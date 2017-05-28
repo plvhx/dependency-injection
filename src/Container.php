@@ -111,6 +111,13 @@ class Container implements \ArrayAccess
 		return (isset($isConcreteExists) ? $isConcreteExists : false);
 	}
 
+	public function isInterface($abstract)
+	{
+		$reflector = Internal\ReflectionClassFactory::create($abstract);
+
+		return $reflector->isInterface();
+	}
+
 	/**
 	 * Get concrete list of dependencies based on supplied class name.
 	 *
@@ -174,7 +181,14 @@ class Container implements \ArrayAccess
 				$class = $value->getClass();
 
 				if ($class instanceof \ReflectionClass) {
-					$params[$key] = $this->circularDependencyResolver($class->getName());
+					if ($class->isInterface()) {
+						$params[$key] = $this->getConcreteFromInterface($class->getName());
+
+						$this->markAsResolved($class->getName());
+					}
+					else {
+						$params[$key] = $this->circularDependencyResolver($class->getName());
+					}
 				}
 			}
 			else {
@@ -198,7 +212,7 @@ class Container implements \ArrayAccess
 	 */
 	protected function circularDependencyResolver($class)
 	{
-		if (!is_string($class) || !class_exists($class)) {
+		if (!is_string($class) && !class_exists($class)) {
 			throw Internal\Exception\ReflectionExceptionFactory::invalidArgument(
 				sprintf("Parameter 1 of %s must be a string of valid class name.", __METHOD__)
 			);
@@ -220,13 +234,41 @@ class Container implements \ArrayAccess
 					$class = $value->getClass();
 
 					if ($class instanceof \ReflectionClass) {
-						$param[$key] = $this->circularDependencyResolver($class->getName());
+						if ($class->isInterface()) {
+							$param[$key] = $this->getConcreteFromInterface($class->getName());
+
+							$this->markAsResolved($class->getName());
+						}
+						else {
+							$param[$key] = $this->circularDependencyResolver($class->getName());
+						}
 					}
 				}
 
 				return $reflector->newInstanceArgs($param);
 			}
 		}
+	}
+
+	protected function getConcreteFromInterface($interface)
+	{
+		if (!$this->isAbstractExists($interface)) {
+			throw Internal\Exception\ReflectionExceptionFactory::runtime(
+				sprintf("%s has no concrete implementation in the clas binding stack.", $interface)
+			);
+		}
+
+		if (sizeof($this->bindings[$interface]) > 1) {
+			throw Internal\Exception\ReflectionExceptionFactory::logic(
+				"An interface must only have 1 concrete implementation."
+			);
+		}
+
+		$concrete = $this->bindings[$interface][0];
+
+		return ($concrete instanceof \Closure ? $concrete($this)
+			: (is_string($concrete) && class_exists($concrete)
+				? $this->resolve($concrete) : $concrete));
 	}
 
 	/**
