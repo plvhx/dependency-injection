@@ -14,7 +14,7 @@ Feel free to look, or clone it for your own needs.
 Autowiring:
 
 Assume you have a class:
-```
+```php
 <?php
 
 namespace Unused;
@@ -35,7 +35,7 @@ class Foo
 
 And you have a class that depends on class Unused\Foo, however class Unused\Foo
 depends on class \SplPriorityHeap
-```
+```php
 <?php
 
 namespace Unused;
@@ -55,7 +55,7 @@ class Bar
 ```
 
 You can resolve an instance of class Bar without resolving Bar and \SplPriorityHeap manually
-```
+```php
 <?php
 
 $container = new Container();
