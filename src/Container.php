@@ -250,6 +250,12 @@ class Container implements \ArrayAccess
 		}
 	}
 
+	/**
+	 * Get concrete implementation from abstract.
+	 *
+	 * @param string $interface The interface name.
+	 * @return object
+	 */
 	protected function getConcreteFromInterface($interface)
 	{
 		if (!$this->isAbstractExists($interface)) {
