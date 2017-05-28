@@ -4,7 +4,7 @@
  * (c) Paulus Gandung Prakosa (rvn.plvhx@gmail.com)
  */
 
-namespace Experiments\DependencyInjection;
+namespace DependencyInjection;
 
 use \ArrayAccess;
 
@@ -19,7 +19,7 @@ class Container implements \ArrayAccess
 	 * @var array
 	 */
 	private $resolved = array();
-	
+
 	/**
 	 * Resolving all dependencies in the supplied class or object instance constructor.
 	 *
@@ -89,7 +89,7 @@ class Container implements \ArrayAccess
 	 */
 	public function isAbstractExists($abstract)
 	{
-		return isset($this->bindings[$abstract]);
+		return array_key_exists($abstract, $this->bindings);
 	}
 
 	/**
@@ -134,6 +134,8 @@ class Container implements \ArrayAccess
 		$reflector = Internal\ReflectionClassFactory::create($instance);
 
 		if (!$this->hasConstructor($reflector)) {
+			$this->markAsResolved($instance);
+			
 			return $this->resolveInstanceWithoutConstructor($reflector);
 		}
 
@@ -169,16 +171,15 @@ class Container implements \ArrayAccess
 
 		foreach ($params as $key => $value) {
 			if ($value instanceof \ReflectionParameter) {
-				$className = $value->getClass();
+				$class = $value->getClass();
 
-				if ($className instanceof \ReflectionClass) {
-					$params[$key] = Internal\ReflectionClassFactory::create($className->getName())
-						->newInstance();
+				if ($class instanceof \ReflectionClass) {
+					$params[$key] = $this->circularDependencyResolver($class->getName());
 				}
 			}
 			else {
 				if (is_string($value) && class_exists($value)) {
-					$params[$key] = Internal\ReflectionClassFactory::create($value)->newInstance();
+					$params[$key] = $this->circularDependencyResolver($value);
 				}
 				else if ($value instanceof \Closure) {
 					$params[$key] = ($this->isConcreteExists($value) ? $value($this) : $value);
@@ -187,6 +188,45 @@ class Container implements \ArrayAccess
 		}
 
 		return $params;
+	}
+
+	/**
+	 * Recursively resolving class dependency.
+	 *
+	 * @param string $class The valid class name.
+	 * @return object
+	 */
+	protected function circularDependencyResolver($class)
+	{
+		if (!is_string($class) || !class_exists($class)) {
+			throw Internal\Exception\ReflectionExceptionFactory::invalidArgument(
+				sprintf("Parameter 1 of %s must be a string of valid class name.", __METHOD__)
+			);
+		}
+
+		$reflector = Internal\ReflectionClassFactory::create($class);
+
+		if (!$this->hasConstructor($reflector)) {
+			return $this->resolveInstanceWithoutConstructor($reflector);
+		}
+		else {
+			$param = $this->getMethodParameters($reflector, '__construct');
+
+			if (empty($param)) {
+				return $reflector->newInstance();
+			}
+			else {
+				foreach ($param as $key => $value) {
+					$class = $value->getClass();
+
+					if ($class instanceof \ReflectionClass) {
+						$param[$key] = $this->circularDependencyResolver($class->getName());
+					}
+				}
+
+				return $reflector->newInstanceArgs($param);
+			}
+		}
 	}
 
 	/**
