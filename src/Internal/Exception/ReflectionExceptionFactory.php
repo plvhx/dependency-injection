@@ -1,6 +1,6 @@
 <?php
 
-namespace Experiments\DependencyInjection\Internal\Exception;
+namespace DependencyInjection\Internal\Exception;
 
 use \InvalidArgumentException;
 use \RuntimeException;
