@@ -11,11 +11,10 @@ php:
 before_script:
   - composer install
   - composer update
-  
+
 script:
   - mkdir -p build/logs
-  - ./vendor/bin/phpunit --disallow-test-output --report-useless-tests --coverage-clover ./clover.xml --group=Coverage
-  - ./vendor/bin/phpunit --disallow-test-output --report-useless-tests --exclude-group=Coverage
+  - ./vendor/bin/phpunit --coverage-clover ./clover.xml --group=Coverage
   - ./vendor/bin/phpcs --standard=PSR2 ./src/ ./tests/
 
 after_script:
