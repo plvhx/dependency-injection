@@ -10,7 +10,8 @@ php:
 
 before_script:
   - composer install
-
+  - composer update
+  
 script:
   - mkdir -p build/logs
   - ./vendor/bin/phpunit --disallow-test-output --report-useless-tests --coverage-clover ./clover.xml --group=Coverage
@@ -19,7 +20,7 @@ script:
 
 after_script:
   - php vendor/bin/coveralls -v
-  
+
 matrix:
   fast_finish: true
   allow_failures:
