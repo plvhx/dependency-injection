@@ -1,6 +1,6 @@
 <?php
 
-namespace Experiments\DependencyInjection\Internal;
+namespace DependencyInjection\Internal;
 
 class ReflectionPropertyFactory
 {
