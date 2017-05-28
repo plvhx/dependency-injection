@@ -4,106 +4,69 @@
  * (c) Paulus Gandung Prakosa (rvn.plvhx@gmail.com)
  */
 
-namespace Experiments\DependencyInjection\Tests;
+namespace DependencyInjection\Tests;
 
-use Experiments\DependencyInjection\Container;
-use Experiments\DependencyInjection\Fixtures\Base;
-use Experiments\DependencyInjection\Fixtures\Dosen;
-use Experiments\DependencyInjection\Fixtures\Mahasiswa;
+use DependencyInjection\Container;
+use DependencyInjection\Tests\Fixtures\Base;
+use DependencyInjection\Tests\Fixtures\Foo;
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
-	public function testIfCanGetContainerInstance()
+	public function testCanGetInstanceOfContainer()
 	{
 		$container = new Container();
 
-		$this->assertInstanceOf(Container::class, $container);
+		$this->assertInstanceOf('DependencyInjection\\Container', $container);
 	}
 
-	public function testIfCanAutoResolvingDependency()
+	public function testCanResolveBaseClass()
 	{
 		$container = new Container();
 
-		$this->assertInstanceOf(Container::class, $container);
+		$base = $container->make(Base::class);
 
-		$dosen = $container->make(Dosen::class);
-
-		$this->assertInstanceOf(Dosen::class, $dosen);
-
-		$dosen->setFirstName('a');
-		$dosen->setMiddleName('b');
-		$dosen->setLastName('c');
-
-		echo sprintf("%s" . PHP_EOL, $dosen);
+		$this->assertInstanceOf('DependencyInjection\\Tests\\Fixtures\\Base', $base);
 	}
 
-	public function testIfCanManuallyResolvingDependency()
+	public function testCanResolveInheritedClass()
 	{
 		$container = new Container();
 
-		$this->assertInstanceOf(Container::class, $container);
+		$foo = $container->make(Foo::class);
 
-		$dosen = $container->make(Dosen::class, array(Base::class));
-
-		$this->assertInstanceOf(Dosen::class, $dosen);
-
-		$dosen->setFirstName('a');
-		$dosen->setMiddleName('b');
-		$dosen->setLastName('c');
-
-		echo sprintf("%s" . PHP_EOL, $dosen);
+		$this->assertInstanceOf('DependencyInjection\\Tests\\Fixtures\\Foo', $foo);
+		$this->assertInstanceOf('DependencyInjection\\Tests\\Fixtures\\Base', $foo->getBase());
 	}
 
-	public function testIfCanBindWithClosure()
+	public function testCanBindBaseClass()
 	{
 		$container = new Container();
 
-		$this->assertInstanceOf(Container::class, $container);
-
-		$container->bind(Dosen::class, function($container) {
+		$container->bind(Base::class, function($container) {
 			return $container->make(Base::class);
 		});
 
-		$dosen = $container->make(Dosen::class);
+		$this->assertTrue($container->isAbstractExists(Base::class));
 
-		$this->assertInstanceOf(Dosen::class, $dosen);
+		$base = $container->make(Base::class);
 
-		$dosen->setFirstName('Paulus');
-		$dosen->setMiddleName('Gandung');
-		$dosen->setLastName('Prakosa');
-
-		echo sprintf("%s" . PHP_EOL, $dosen);		
+		$this->assertFalse($container->isAbstractExists(Base::class));
+		$this->assertInstanceOf('DependencyInjection\\Tests\\Fixtures\\Base', $base);
 	}
 
-	public function testIfCanBindWithoutClosure()
+	public function testCanBindInheritedClass()
 	{
 		$container = new Container();
 
-		$this->assertInstanceOf(Container::class, $container);
-
-		$container->bind(Dosen::class, Base::class);
-
-		$dosen = $container->make(Dosen::class);
-
-		$this->assertInstanceOf(Dosen::class, $dosen);
-
-		$dosen->setFirstName('Paulus');
-		$dosen->setMiddleName('Gandung');
-		$dosen->setLastName('Prakosa');
-
-		echo sprintf("%s" . PHP_EOL, $dosen);		
-	}
-
-	public function testIfInstanceIsInvokable()
-	{
-		$container = new Container();
-
-		$this->assertInstanceOf(Container::class, $container);
-
-		$container->bind(Dosen::class, function($container) {
+		$container->bind(Foo::class, function($container) {
 			return $container->make(Base::class);
 		});
 
-		$container->callInstance(Dosen::class, array('Yohanes Sunu Jatmika'));
+		$this->assertTrue($container->isAbstractExists(Foo::class));
+
+		$foo = $container->make(Foo::class);
+
+		$this->assertFalse($container->isAbstractExists(Foo::class));
+		$this->assertInstanceOf('DependencyInjection\\Tests\\Fixtures\\Foo', $foo);
 	}
 }
