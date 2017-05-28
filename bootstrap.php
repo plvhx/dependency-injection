@@ -15,9 +15,7 @@
 
 	$className .= '.php';
 
-	if (file_exists($className) && is_file($className)) {
-		clearstatcache(true);
-
-		require_once $className;
+	if ($file = stream_resolve_include_path($className)) {
+		require_once $file;
 	}
 });
