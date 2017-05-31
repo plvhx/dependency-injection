@@ -9,6 +9,11 @@ namespace DependencyInjection\Tests\Fixtures;
 class Base implements BaseInterface
 {
     /**
+     * Give this static property for dummy test.
+     */
+    public static $dummy = 8080;
+    
+    /**
      * @var string
      */
     private $firstName;
@@ -23,6 +28,10 @@ class Base implements BaseInterface
      */
     private $lastName;
 
+    public function __construct()
+    {
+    }
+    
     /**
      * {@inheritdoc}
      */
