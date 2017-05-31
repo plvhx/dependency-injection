@@ -99,6 +99,8 @@ $bar = $container->make(Bar::class);
 
 Now, $bar is an instance of Bar::class too.
 
+## Unit Testing
+
 If you want to run unit tests:
 ```
 vendor/bin/phpunit
