@@ -9,8 +9,8 @@ This is my simple dependency injection library in PHP
 
 Features:
 ```
-  - can resolve class dependency that placed only on constructor (autowiring)
-  - binding concrete dependency into unresolved abstract, either closure or class name.
+  - Can resolve class dependency that placed only on constructor (autowiring)
+  - Binding concrete dependency into unresolved abstract, either closure or class name.
   - Can resolve concrete implementation on typehinted interface on constructor method.
 ```
 
