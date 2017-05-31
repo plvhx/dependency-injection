@@ -2,7 +2,7 @@
 
 namespace DependencyInjection\Internal;
 
-class ReflectionPropertyFactory
+class ReflectionPropertyFactory implements ReflectionFactoryInterface
 {
     /**
      * @var \ReflectionProperty
@@ -11,25 +11,13 @@ class ReflectionPropertyFactory
 
     public function __construct($class, $name)
     {
-        if (!is_object($class) || !is_string($class)) {
+        if (!is_string($class) && !class_exists($class)) {
             throw Exception\ReflectionExceptionFactory::invalidArgument(
-                sprintf("Parameter 1 of %s must be either string or an object.", __METHOD__)
-            );
-        }
-
-        if (!is_string($name) || !class_exists($name)) {
-            throw Exception\ReflectionExceptionFactory::invalidArgument(
-                sprintf("Parameter 2 of %s must be either string or exist class name.")
+                sprintf("Parameter 1 of %s must be either string and valid class name.", __METHOD__)
             );
         }
 
         $this->reflectionProperty = new \ReflectionProperty($class, $name);
-
-        if (!($this->reflectionProperty instanceof \ReflectionProperty)) {
-            throw Exception\ReflectionExceptionFactory::reflectionInternal(
-                sprintf("Unable to get an instance of \\ReflectionProperty.")
-            );
-        }
     }
 
     public static function create($class, $name)
@@ -112,7 +100,7 @@ class ReflectionPropertyFactory
 
     public function setAccessible($accessible = false)
     {
-        $this->reflectionProperty->setAccessiable($accessible);
+        $this->reflectionProperty->setAccessible($accessible);
     }
 
     public function setValue($object, $value)
@@ -127,7 +115,7 @@ class ReflectionPropertyFactory
         }
 
         $object = (is_string($object) && class_exists($object)
-            ? ReflectionClassFactory($object)->newInstance()
+            ? ReflectionClassFactory::create($object)->newInstance()
             : (is_object($object)
                 ? $object
                 : null));
@@ -144,5 +132,10 @@ class ReflectionPropertyFactory
     public function __toString()
     {
         return (string)$this->reflectionProperty;
+    }
+
+    public function getReflector()
+    {
+        return $this->reflectionProperty;
     }
 }

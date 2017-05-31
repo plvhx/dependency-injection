@@ -2,7 +2,7 @@
 
 namespace DependencyInjection\Internal;
 
-class ReflectionObjectFactory
+class ReflectionObjectFactory implements ReflectionFactoryInterface
 {
     /**
      * @var \ReflectionObject
@@ -18,12 +18,6 @@ class ReflectionObjectFactory
         }
 
         $this->reflectionObject = new \ReflectionObject($object);
-
-        if (!($this->reflectionObject instanceof \ReflectionObject)) {
-            throw Exception\ReflectionExceptionFactory::reflectionInternal(
-                "Unable to get an instance of \\ReflectionObject."
-            );
-        }
     }
 
     public static function create($object)

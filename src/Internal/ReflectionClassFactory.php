@@ -6,7 +6,7 @@
 
 namespace DependencyInjection\Internal;
 
-class ReflectionClassFactory
+class ReflectionClassFactory implements ReflectionFactoryInterface
 {
     /**
      * @var \ReflectionClass
@@ -15,13 +15,13 @@ class ReflectionClassFactory
 
     public function __construct($instance)
     {
-        $this->reflection = new \ReflectionClass($instance);
-
-        if (!($this->reflection instanceof \ReflectionClass)) {
-            throw Exception\ReflectionExceptionFactory::reflectionInternal(
-                "Unable to get instance from ReflectionClass."
+        if (!is_string($instance) && !class_exists($instance)) {
+            throw Exception\ReflectionExceptionFactory::invalidArgument(
+                sprintf("Parameter 1 of %s must be a string and exist class name.", __METHOD__)
             );
         }
+
+        $this->reflection = new \ReflectionClass($instance);
     }
 
     public static function create($instance)
@@ -216,12 +216,7 @@ class ReflectionClassFactory
     {
         return $this->reflection->isAbstract();
     }
-
-    public function isAnonymous()
-    {
-        return $this->reflection->isAnonymous();
-    }
-
+    
     public function isCloneable()
     {
         return $this->reflection->isCloneable();
@@ -307,21 +302,27 @@ class ReflectionClassFactory
 
     public function setStaticPropertyValue($name, $value)
     {
-        if (!is_string($name) || !is_string($value)) {
+        if (!is_string($name)) {
             throw Exception\ReflectionExceptionFactory::invalidArgument(
-                sprintf("Parameter 1 and 2 of %s must be a string.", __METHOD__)
+                sprintf("Parameter 1 of %s must be a string.", __METHOD__)
+            );
+        }
+
+        if (!isset($value)) {
+            throw Exception\ReflectionExceptionFactory::invalidArgument(
+                sprintf("Parameter 2 of %s must be set.", __METHOD__)
             );
         }
 
         $this->reflection->setStaticPropertyValue($name, $value);
     }
-
+    
     public function __toString()
     {
         return call_user_func([$this->reflection, '__toString']);
     }
 
-    public function getReflection()
+    public function getReflector()
     {
         return $this->reflection;
     }

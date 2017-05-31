@@ -2,7 +2,7 @@
 
 namespace DependencyInjection\Internal;
 
-class ReflectionFunctionFactory
+class ReflectionFunctionFactory implements ReflectionFactoryInterface
 {
     /**
      * @var \ReflectionFunction
@@ -18,12 +18,6 @@ class ReflectionFunctionFactory
         }
 
         $this->reflectionFunction = new \ReflectionFunction($name);
-
-        if (!is_a($this->reflectionFunction, 'ReflectionFunction')) {
-            throw Exception\ReflectionExceptionFactory::reflectionInternal(
-                "Unable to get an instance of \\ReflectionFunction."
-            );
-        }
     }
 
     public static function create($name)
@@ -69,7 +63,7 @@ class ReflectionFunctionFactory
         return (string)$this->reflectionFunction;
     }
 
-    public function getReflectionFunction()
+    public function getReflector()
     {
         return $this->reflectionFunction;
     }

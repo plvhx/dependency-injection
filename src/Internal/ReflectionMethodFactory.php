@@ -2,7 +2,7 @@
 
 namespace DependencyInjection\Internal;
 
-class ReflectionMethodFactory
+class ReflectionMethodFactory implements ReflectionFactoryInterface
 {
     /**
      * @var \ReflectionMethod
@@ -11,19 +11,28 @@ class ReflectionMethodFactory
 
     public function __construct($class, $name)
     {
-        if (!is_string($class) || !is_object($class)) {
+        if (!is_string($class) && !is_object($class)) {
             throw Exception\ReflectionExceptionFactory::invalidArgument(
                 sprintf("Parameter 1 of %s must be either class name or object.", __METHOD__)
             );
         }
 
-        $this->reflectionMethod = new \ReflectionMethod($class, $name);
-
-        if (!($this->reflectionMethod instanceof \ReflectionMethod)) {
-            throw Exception\ReflectionExceptionFactory::reflectionInternal(
-                "Unable to get an instance of \\ReflectionMethod."
+        if (!isset($name) || !is_string($name)) {
+            throw Exception\ReflectionExceptionFactory::invalidArgument(
+                sprintf("Parameter 2 of %s must be either valid method name.", __METHOD__)
             );
         }
+
+        $reflector = (is_string($class) ? ReflectionClassFactory::create($class)
+            : ReflectionObjectFactory::create($class));
+
+        if (!$reflector->hasMethod($name)) {
+            throw Exception\ReflectionExceptionFactory::reflectionInternal(
+                sprintf("Class %s doesn't have method %s", __CLASS__, $name)
+            );
+        }
+
+        $this->reflectionMethod = new \ReflectionMethod($class, $name);
     }
 
     public static function create($class, $name)
@@ -64,14 +73,27 @@ class ReflectionMethodFactory
 
     public function invoke($object)
     {
-        return call_user_func_array([$this->reflectionMethod, 'invoke'], array_slice(func_get_args(), 1));
+        if (!is_object($object)) {
+            throw Exception\ReflectionExceptionFactory::invalidArgument(
+                sprintf("Parameter 1 of %s must be an object.", __METHOD__)
+            );
+        }
+
+        return call_user_func_array([$this->reflectionMethod, 'invoke'],
+            array_merge([$object], array_slice(func_get_args(), 1)));
     }
 
     public function invokeArgs($object, $args = [])
     {
+        if (!is_object($object)) {
+            throw Exception\ReflectionExceptionFactory::invalidArgument(
+                sprintf("Parameter 1 of %s must be an object.", __METHOD__)
+            );
+        }
+
         if (!is_array($args)) {
             throw Exception\ReflectionExceptionFactory::invalidArgument(
-                sprintf("Parameter 1 of %s must be an array.", __METHOD__)
+                sprintf("Parameter 2 of %s must be an array.", __METHOD__)
             );
         }
 
@@ -134,7 +156,7 @@ class ReflectionMethodFactory
         return (string)$this->reflectionMethod;
     }
 
-    public function getReflectionMethod()
+    public function getReflector()
     {
         return $this->reflectionMethod;
     }
