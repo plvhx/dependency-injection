@@ -5,7 +5,7 @@
 \spl_autoload_register(function($className) {
 	$rootDir = __DIR__ . DIRECTORY_SEPARATOR . 'src';
 
-	$namespace = 'Experiments\\DependencyInjection';
+	$namespace = 'DependencyInjection';
 
 	$className = str_replace(
 		'\\',
