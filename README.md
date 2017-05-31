@@ -7,7 +7,7 @@
 
 This is my simple dependency injection library in PHP
 
-Features:
+## Features:
 ```
   - Can resolve class dependency that placed only on constructor (autowiring)
   - Binding concrete dependency into unresolved abstract, either closure or class name.
@@ -17,7 +17,7 @@ Features:
 Setter injection and method injection not yet implemented.
 Feel free to look, or clone it for your own needs.
 
-Autowiring:
+## Autowiring:
 
 Assume you have a class:
 ```php
@@ -68,6 +68,36 @@ $container = new Container();
 
 $bar = $container->make(Bar::class);
 ```
+
+## Binding concrete dependency into unresolved abstract (only class name)
+
+```php
+<?php
+
+$container = new Container();
+
+$container->bind(Bar::class, Foo::class);
+
+$bar = $container->make(Bar::class);
+```
+
+Now, $bar is an instance of Bar::class.
+
+## Binding concrete dependency into unresolved abstract (with closure)
+
+```php
+<?php
+
+$container = new Container();
+
+$container->bind(Bar::class, function($container) {
+	return $container->make(Foo::class);
+});
+
+$bar = $container->make(Bar::class);
+```
+
+Now, $bar is an instance of Bar::class too.
 
 If you want to run unit tests:
 ```
