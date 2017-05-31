@@ -1,9 +1,9 @@
 # Simple Dependency Injection Library
 
 [![SensioLabsInsight](https://insight.sensiolabs.com/projects/14e50be8-c441-4d03-b65d-cb07e33c0672/small.png)](https://insight.sensiolabs.com/projects/14e50be8-c441-4d03-b65d-cb07e33c0672)
-[![Build Status](https://travis-ci.org/plvhx/dependency-injection.svg?branch=master)](https://travis-ci.org/plvhx/dependency-injection)
 [![Coverage Status](https://coveralls.io/repos/github/plvhx/dependency-injection/badge.svg)](https://coveralls.io/github/plvhx/dependency-injection)
-
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/plvhx/dependency-injection/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/plvhx/dependency-injection/?branch=master)
+[![Build Status](https://scrutinizer-ci.com/g/plvhx/dependency-injection/badges/build.png?b=master)](https://scrutinizer-ci.com/g/plvhx/dependency-injection/build-status/master)
 This is my simple dependency injection library in PHP
 
 Features:
