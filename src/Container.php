@@ -58,9 +58,7 @@ class Container implements \ArrayAccess
      */
     public function offsetSet($offset, $value)
     {
-        $this->bind($offset, $value instanceof \Closure ? $value : function () use ($value) {
-            return $value;
-        });
+        $this->bind($offset, $value instanceof \Closure ? $value : $this->turnIntoResolvableClosure($offset, $value));
     }
 
     /**
@@ -276,20 +274,9 @@ class Container implements \ArrayAccess
      * @param \ReflectionClass $refl The current reflection class object.
      * @return boolean
      */
-    public function hasConstructor(Internal\ReflectionClassFactory $refl)
+    protected function hasConstructor(Internal\ReflectionClassFactory $refl)
     {
         return $refl->hasMethod('__construct');
-    }
-
-    /**
-     * Determine if unresolvable class name has invokable.
-     *
-     * @param \ReflectionClass $refl The current reflection class object.
-     * @return boolean
-     */
-    public function isInvokable(Internal\ReflectionClassFactory $refl)
-    {
-        return $refl->hasMethod('__invoke') || $refl->getMethod('__invoke')->isPublic();
     }
 
     /**
@@ -298,9 +285,9 @@ class Container implements \ArrayAccess
      * @param \ReflectionClass $refl The current reflection class object.
      * @return boolean
      */
-    public function isCloneable(Internal\ReflectionClassFactory $refl)
+    protected function isCloneable(Internal\ReflectionClassFactory $refl)
     {
-        return $refl->hasMethod('__clone') || $refl->getMethod('__clone')->isPublic();
+        return $refl->hasMethod('__clone');
     }
 
     /**
@@ -309,9 +296,9 @@ class Container implements \ArrayAccess
      * @param \ReflectionClass $refl The current reflection class object.
      * @return boolean
      */
-    public function isSerializable(Internal\ReflectionClassFactory $refl)
+    protected function isSerializable(Internal\ReflectionClassFactory $refl)
     {
-        return $refl->hasMethod('__sleep') || $refl->getMethod('__sleep')->isPublic();
+        return $refl->hasMethod('__sleep');
     }
 
     /**
@@ -367,9 +354,11 @@ class Container implements \ArrayAccess
             $concrete = $this->turnIntoResolvableClosure($abstract, $concrete);
         }
 
-        $this->bindings[$abstract] = (isset($this->bindings[$abstract])
-            ? array_push($this->bindings[$abstract], $concrete)
-            : [$concrete]);
+        if (isset($this->bindings[$abstract])) {
+            array_push($this->bindings[$abstract], $concrete);
+        } else {
+            $this->bindings[$abstract] = [$concrete];
+        }
     }
 
     /**
@@ -395,18 +384,14 @@ class Container implements \ArrayAccess
      */
     public function callInstance($instance, $args = [])
     {
-        if (!$this->isAbstractExists($instance)) {
-            $this->bind($instance);
-        }
-
+        $args = (is_array($args) ? $args : array_slice(func_get_args(), 1));
+        
         $current = $this->make($instance);
-        $reflector = Internal\ReflectionClassFactory::create($current);
+        $reflector = Internal\ReflectionObjectFactory::create($current);
 
-        if ($this->isInvokable($reflector)) {
-            $this->markAsResolved($instance);
+        $this->markAsResolved($instance);
 
-            return call_user_func_array($current, $args);
-        }
+        return call_user_func_array($current, $args);
     }
 
     /**
