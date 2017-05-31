@@ -387,7 +387,6 @@ class Container implements \ArrayAccess
         $args = (is_array($args) ? $args : array_slice(func_get_args(), 1));
         
         $current = $this->make($instance);
-        $reflector = Internal\ReflectionObjectFactory::create($current);
 
         $this->markAsResolved($instance);
 
