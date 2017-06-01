@@ -161,6 +161,11 @@ class Container implements \ArrayAccess
         return (isset($isConcreteExists) ? $isConcreteExists : false);
     }
 
+    /**
+     * Determine if unresolved abstract is an interface.
+     *
+     * @param string $abstract The unresolved abstract name.
+     */
     public function isInterface($abstract)
     {
         $reflector = Internal\ReflectionClassFactory::create($abstract);
