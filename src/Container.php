@@ -21,6 +21,11 @@ class Container implements \ArrayAccess
     private $resolved = [];
 
     /**
+     * @var array
+     */
+    private $aliases = [];
+
+    /**
      * Resolving all dependencies in the supplied class or object instance constructor.
      *
      * @param string $instance The class name.
@@ -37,6 +42,53 @@ class Container implements \ArrayAccess
             : array_slice(func_get_args(), 1));
     }
 
+    /**
+     * Register a service alias.
+     *
+     * @param string $alias The alias name.
+     * @param string $abstract The class name.
+     */
+    public function register($alias, $abstract)
+    {
+        if (!is_string($alias) || !is_string($abstract)) {
+            throw new \InvalidArgumentException(
+                sprintf("Parameter 1 and 2 of %s must be a string.", __METHOD__)
+            );
+        }
+
+        if (!isset($this->aliases[$alias])) {
+            $this->aliases[$alias] = $this->make($abstract);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Determine if registered alias were exists.
+     *
+     * @param string $alias The alias name.
+     */
+    public function isAliasExists($alias)
+    {
+        return isset($this->aliases[$alias]);
+    }
+
+    /**
+     * Get concrete implementation from supplied alias name.
+     *
+     * @param string $alias The alias name.
+     */
+    public function get($alias)
+    {
+        if (!$this->isAliasExists($alias)) {
+            throw new \InvalidArgumentException(
+                sprintf("Parameter 1 of %s must be valid alias name.", __METHOD__)
+            );
+        }
+
+        return $this->aliases[$alias];
+    }
+    
     /**
      * {@inheritdoc}
      */
