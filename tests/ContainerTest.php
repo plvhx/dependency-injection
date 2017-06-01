@@ -33,6 +33,73 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('DependencyInjection\\Container', $container);
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testCanThrowExceptionWhileRegisteringServiceAlias()
+    {
+        $container = new Container();
+
+        $container->register(null, Base::class);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testCanThrowExceptionWhileRegisteringServiceAliasWithInvalidAbstract()
+    {
+        $container = new Container();
+
+        $container->register('base.service', null);
+    }
+
+    public function testCanRegisterServiceAlias()
+    {
+        $container = new Container();
+
+        $container->register('base.service', Base::class);
+
+        $this->assertTrue($container->isAliasExists('base.service'));
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testCanThrowExceptionWhileGetServiceAlias()
+    {
+        $container = new Container();
+
+        $container->register('base.service', Base::class);
+
+        $container->get('nonexistent.service');
+    }
+
+    public function testCanGetServiceAlias()
+    {
+        $container = new Container();
+
+        $container->register('base.service', Base::class, 'auto');
+
+        $base = $container->get('base.service');
+
+        $this->assertInstanceOf(Base::class, $base);
+    }
+
+    public function testCanGetServiceAliasWithBinding()
+    {
+        $container = new Container();
+
+        $container->bind(BaseInterface::class, function ($container) {
+            return $container->make(Base::class);
+        });
+
+        $container->register('foo.service', FooWithInterface::class);
+
+        $foo = $container->get('foo.service');
+
+        $this->assertInstanceOf(FooWithInterface::class, $foo);
+    }
+
     public function testIfOffsetWasExists()
     {
         $container = new Container();
