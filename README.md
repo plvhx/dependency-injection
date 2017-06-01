@@ -64,6 +64,8 @@ You can resolve an instance of class Bar without resolving Bar and \SplPriorityH
 ```php
 <?php
 
+use Unused\Bar;
+
 $container = new Container();
 
 $bar = $container->make(Bar::class);
@@ -73,6 +75,9 @@ $bar = $container->make(Bar::class);
 
 ```php
 <?php
+
+use Unused\Bar;
+use Unused\Foo;
 
 $container = new Container();
 
@@ -88,6 +93,9 @@ Now, $bar is an instance of Bar::class.
 ```php
 <?php
 
+use Unused\Bar;
+use Unused\Foo;
+
 $container = new Container();
 
 $container->bind(Bar::class, function($container) {
@@ -98,6 +106,116 @@ $bar = $container->make(Bar::class);
 ```
 
 Now, $bar is an instance of Bar::class too.
+
+## Binding typehinted interface into unresolved abstract (class based and with closure)
+
+Assume you have an BaseInterface interface:
+```php
+<?php
+
+namespace Unused;
+
+interface BaseInterface
+{
+	public function setFirstName($firstName);
+
+	public function setMiddleName($middleName);
+
+	public function setLastName($lastName);
+}
+```
+
+And a class which implements BaseInterface interface under the same namespace:
+```php
+<?php
+
+namespace Unused;
+
+class Base implements BaseInterface
+{
+	/**
+	 * @var string
+	 */
+	private $firstName;
+
+	/**
+	 * @var string
+	 */
+	private $middleName;
+
+	/**
+	 * @var string
+	 */
+	private $lastName;
+
+	public function setFirstName($firstName)
+	{
+		$this->firstName = $firstName;
+	}
+
+	public function setMiddleName($middleName)
+	{
+		$this->middleName = $middleName;
+	}
+
+	public function setLastName($lastName)
+	{
+		$this->lastName = $lastName;
+	}
+}
+```
+
+And a class which have typehinted interface in it's constructor
+```php
+<?php
+
+namespace Unused;
+
+class Foo
+{
+	/**
+	 * @var BaseInterface
+	 */
+	private $base;
+
+	public function __construct(BaseInterface $base)
+	{
+		$this->base = $base;
+	}
+}
+```
+
+You can resolve class Foo with binding class Base into BaseInterface first.
+```php
+<?php
+
+use Unused\BaseInterface;
+use Unused\Base;
+use Unused\Foo;
+
+$container = new Container();
+
+$container->bind(BaseInterface::class, Base::class);
+
+$foo = $container->make(Foo::class);
+```
+
+Or, you and bind concrete implementation of BaseInterface with closure
+```php
+<?php
+
+use Unused\BaseInterface;
+use Unused\Base;
+use Unused\Foo;
+
+$container = new Container();
+
+$container->bind(BaseInterface::class, function($container) {
+	return $container->make(Base::class);
+});
+
+$foo = $container->make(Foo::class);
+```
 
 ## Unit Testing
 

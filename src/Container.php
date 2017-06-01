@@ -237,12 +237,17 @@ class Container implements \ArrayAccess
                     } else {
                         $params[$key] = $this->circularDependencyResolver($class->getName());
                     }
+                } else {
+                    $params[$key] = ($value->isDefaultValueAvailable()
+                        ? $value->getDefaultValue() : null);
                 }
             } else {
                 if (is_string($value) && class_exists($value)) {
                     $params[$key] = $this->circularDependencyResolver($value);
                 } elseif ($value instanceof \Closure) {
                     $params[$key] = ($this->isConcreteExists($value) ? $value($this) : $value);
+                } else {
+                    $params[$key] = $value;
                 }
             }
         }

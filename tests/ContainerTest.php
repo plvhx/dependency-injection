@@ -14,6 +14,7 @@ use DependencyInjection\Tests\Fixtures\Foo;
 use DependencyInjection\Tests\Fixtures\FooWithInterface;
 use DependencyInjection\Tests\Fixtures\NonInvokableFoo;
 use DependencyInjection\Tests\Fixtures\Bar;
+use DependencyInjection\Tests\Fixtures\Baz;
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
@@ -652,5 +653,14 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         });
 
         $this->assertTrue($container->isBound(Foo::class));
+    }
+
+    public function testCanResolveBaz()
+    {
+        $container = new Container();
+
+        $baz = $container->make(Baz::class);
+
+        $this->assertInstanceOf(Baz::class, $baz);
     }
 }
