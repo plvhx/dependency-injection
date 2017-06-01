@@ -64,7 +64,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \InvalidArgumentException
+     * @expectedException DependencyInjection\Exception\ContainerException
      */
     public function testCanThrowExceptionWhileGetServiceAlias()
     {
@@ -81,6 +81,8 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
 
         $container->register('base.service', Base::class, 'auto');
 
+        $this->assertTrue($container->has('base.service'));
+        
         $base = $container->get('base.service');
 
         $this->assertInstanceOf(Base::class, $base);

@@ -6,9 +6,11 @@
 
 namespace DependencyInjection;
 
-use \ArrayAccess;
+use Psr\Container\ContainerInterface;
+use DependencyInjection\Exception\ContainerException;
+use DependencyInjection\Exception\NotFoundException;
 
-class Container implements \ArrayAccess
+class Container implements \ArrayAccess, ContainerInterface
 {
     /**
      * @var array
@@ -74,21 +76,48 @@ class Container implements \ArrayAccess
     }
 
     /**
-     * Get concrete implementation from supplied alias name.
+     * Finds an entry of the container by its identifier and returns it.
      *
-     * @param string $alias The alias name.
+     * @param string $id Identifier of the entry to look for.
+     *
+     * @throws NotFoundExceptionInterface  No entry was found for **this** identifier.
+     * @throws ContainerExceptionInterface Error while retrieving the entry.
+     *
+     * @return mixed Entry.
      */
-    public function get($alias)
+    public function get($id)
     {
-        if (!$this->isAliasExists($alias)) {
-            throw new \InvalidArgumentException(
-                sprintf("Parameter 1 of %s must be valid alias name.", __METHOD__)
+        if (!$this->isAliasExists($id)) {
+            throw new NotFoundException(
+                sprintf("Identifier %s was not found in our service container stack.", $id)
             );
         }
 
-        return $this->aliases[$alias];
+        if (empty($this->aliases[$id])) {
+            throw new ContainerException(
+                sprintf("Unable to get concrete implementation for identifier %s", $id)
+            );
+        }
+
+        return $this->aliases[$id];
     }
     
+    /**
+     * Returns true if the container can return an entry for the given identifier.
+     * Returns false otherwise.
+     *
+     * `has($id)` returning true does not mean that `get($id)` will not throw an exception.
+     * It does however mean that `get($id)` will not throw a `NotFoundExceptionInterface`.
+     *
+     * @param string $id Identifier of the entry to look for.
+     *
+     * @return bool
+     */
+    public function has($id)
+    {
+        return $this->isAliasExists($id);
+    }
+
     /**
      * {@inheritdoc}
      */
