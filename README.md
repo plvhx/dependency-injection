@@ -12,6 +12,7 @@ This is my simple dependency injection library in PHP
   - Can resolve class dependency that placed only on constructor (autowiring)
   - Binding concrete dependency into unresolved abstract, either closure or class name.
   - Can resolve concrete implementation on typehinted interface on constructor method.
+  - Registering service under an alias.
 ```
 
 Setter injection and method injection not yet implemented.
@@ -215,6 +216,43 @@ $container->bind(BaseInterface::class, function($container) {
 });
 
 $foo = $container->make(Foo::class);
+```
+
+## Registering service under an alias (PSR-11 compatible.)
+
+Assume you have a service which require a concrete implementation of a BaseInterface:
+```php
+<?php
+
+namespace Unused;
+
+class FooService
+{
+	/**
+	 * @var BaseInterface
+	 */
+	private $base;
+
+	public function __construct(BaseInterface $base)
+	{
+		$this->base = $base;
+	}
+}
+```
+
+Just bind a concrete implementation of BaseInterface, then register FooService under an alias (e.g: foo.service)
+```php
+<?php
+
+$container = new Container();
+
+$container->bind(BaseInterface::class, function($container) {
+	return $container->make(Base::class);
+});
+
+$container->register('foo.service', FooService::class);
+
+$service = $container->get('foo.service');
 ```
 
 ## Unit Testing
