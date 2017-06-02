@@ -56,6 +56,20 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf(BaseInterface::class, $base);
     }
 
+    public function testCanGetConcreteImplementationFromInterfaceWithClosure()
+    {
+        $container = new Container();
+
+        $container->bind(BaseInterface::class, function($container) {
+            return $container->make(Base::class);
+        });
+
+        $base = $container->make(BaseInterface::class);
+
+        $this->assertInstanceOf(Base::class, $base);
+        $this->assertInstanceOf(BaseInterface::class, $base);
+    }
+    
     /**
      * @expectedException \InvalidArgumentException
      */
