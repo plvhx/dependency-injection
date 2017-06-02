@@ -12,6 +12,7 @@ This is my simple dependency injection library in PHP
   - Can resolve class dependency that placed only on constructor (autowiring)
   - Binding concrete dependency into unresolved abstract, either closure or class name.
   - Can resolve concrete implementation on typehinted interface on constructor method.
+  - Can resolve concrete implementation which bound on interface direcly.
   - Registering service under an alias.
 ```
 
@@ -216,6 +217,96 @@ $container->bind(BaseInterface::class, function($container) {
 });
 
 $foo = $container->make(Foo::class);
+```
+
+## Resolve concrete implementation which bound on interface directly
+
+Assume you have an interface:
+```php
+<?php
+
+namespace Unused;
+
+interface BaseInterface
+{
+	public function setFirstName($firstName);
+
+	public function setMiddleName($middleName);
+
+	public function setLastName($lastName);
+}
+```
+
+And, concrete class which implements Unused\BaseInterface
+```php
+<?php
+
+namespace Unused;
+
+class Base implements BaseInterface
+{
+	/**
+	 * @var string
+	 */
+	private $firstName;
+
+	/**
+	 * @var string
+	 */
+	private $middleName;
+
+	/**
+	 * @var string
+	 */
+	private $lastName;
+
+	/**
+	 * @implements
+	 */
+	public function setFirstName($firstName)
+	{
+		$this->firstName = $firstName;
+	}
+
+	/**
+	 * @implements
+	 */
+	public function setMiddleName($middleName)
+	{
+		$this->middleName = $middleName;
+	}
+
+	/**
+	 * @implements
+	 */
+	public function setLastName($lastName)
+	{
+		$this->lastName = $lastName;
+	}
+}
+```
+
+Bind concrete implementation on that interface first (use either direct class name or closure)
+```php
+<?php
+
+use Unused\Base;
+use Unused\BaseInterface;
+
+$container = new Container();
+
+// with direct class name.
+$container->bind(BaseInterface::class, Base::class);
+
+// or, use a closure.
+$container->bind(BaseInterface::class, function($container) {
+	return $container->make(Base::class);
+});
+```
+
+Then, get it directly.
+```php
+$base = $container->make(BaseInterface::class);
 ```
 
 ## Registering service under an alias (PSR-11 compatible.)
