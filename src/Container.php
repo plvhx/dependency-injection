@@ -36,6 +36,10 @@ class Container implements \ArrayAccess, ContainerInterface
      */
     public function make($instance, $parameters = [])
     {
+        if ($this->isInterface($instance)) {
+            return $this->getConcreteFromInterface($instance);
+        }
+
         if ($this->isAbstractExists($instance)) {
             return $this->resolve($instance, $this->getConcrete($instance));
         }
@@ -342,7 +346,7 @@ class Container implements \ArrayAccess, ContainerInterface
     {
         if (!$this->isAbstractExists($interface)) {
             throw Internal\Exception\ReflectionExceptionFactory::runtime(
-                sprintf("%s has no concrete implementation in the clas binding stack.", $interface)
+                sprintf("%s has no concrete implementation in the class binding stack.", $interface)
             );
         }
 
