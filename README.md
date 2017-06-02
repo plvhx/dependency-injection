@@ -12,7 +12,7 @@ This is my simple dependency injection library in PHP
   - Can resolve class dependency that placed only on constructor (autowiring)
   - Binding concrete dependency into unresolved abstract, either closure or class name.
   - Can resolve concrete implementation on typehinted interface on constructor method.
-  - Can resolve concrete implementation which bound on interface direcly.
+  - Can resolve concrete implementation which bound on interface directly.
   - Registering service under an alias.
 ```
 
