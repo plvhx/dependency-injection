@@ -35,6 +35,28 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @expectedException \RuntimeException
+     */
+    public function testCanThrowExceptionWhileTryingToGetConcreteImplementationFromInterface()
+    {
+        $container = new Container();
+
+        $container->make(BaseInterface::class);
+    }
+
+    public function testCanGetConcreteImplementationFromInterface()
+    {
+        $container = new Container();
+
+        $container->bind(BaseInterface::class, Base::class);
+
+        $base = $container->make(BaseInterface::class);
+
+        $this->assertInstanceOf(Base::class, $base);
+        $this->assertInstanceOf(BaseInterface::class, $base);
+    }
+
+    /**
      * @expectedException \InvalidArgumentException
      */
     public function testCanThrowExceptionWhileRegisteringServiceAlias()
