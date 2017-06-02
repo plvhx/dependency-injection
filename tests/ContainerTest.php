@@ -60,7 +60,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     {
         $container = new Container();
 
-        $container->bind(BaseInterface::class, function($container) {
+        $container->bind(BaseInterface::class, function ($container) {
             return $container->make(Base::class);
         });
 
