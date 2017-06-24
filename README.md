@@ -11,6 +11,7 @@ This is my simple dependency injection library in PHP
 ```
   - Can resolve class dependency that placed only on constructor (autowiring)
   - Binding concrete dependency into unresolved abstract, either closure or class name.
+  - Can do shared binding concrete dependency into unresolved abstract, either closure or class name.
   - Can resolve concrete implementation on typehinted interface on constructor method.
   - Can resolve concrete implementation which bound on interface directly.
   - Registering service under an alias.
@@ -108,6 +109,38 @@ $bar = $container->make(Bar::class);
 ```
 
 Now, $bar is an instance of Bar::class too.
+
+## Shared binding concrete dependency into unresolved abstract (only class name)
+
+```php
+<?php
+
+use Unused\Base;
+use Unused\BaseInterface;
+
+$container = new Container();
+
+$container->singleton(BaseInterface::class, Base::class);
+
+$base = $container->make(BaseInterface::class);
+```
+
+## Shared binding concrete dependency into unresolved abstract (with closure)
+
+```php
+<?php
+
+use Unused\Base;
+use Unused\BaseInterface;
+
+$container = new Container();
+
+$container->singleton(BaseInterface::class, function($container) {
+	return $container->make(Base::class);
+});
+
+$base = $container->make(BaseInterface::class);
+```
 
 ## Binding typehinted interface into unresolved abstract (class based and with closure)
 
