@@ -36,14 +36,6 @@ class Container implements \ArrayAccess, ContainerInterface
      */
     public function make($instance, $parameters = [])
     {
-        if ($this->isInterface($instance)) {
-            return $this->getConcreteFromInterface($instance);
-        }
-
-        if ($this->isAbstractExists($instance)) {
-            return $this->resolve($instance, $this->getConcrete($instance));
-        }
-
         return $this->resolve($instance, is_array($parameters) ? $parameters
             : array_slice(func_get_args(), 1));
     }
@@ -94,12 +86,6 @@ class Container implements \ArrayAccess, ContainerInterface
         if (!$this->isAliasExists($id)) {
             throw new NotFoundException(
                 sprintf("Identifier %s was not found in our service container stack.", $id)
-            );
-        }
-
-        if (empty($this->aliases[$id])) {
-            throw new ContainerException(
-                sprintf("Unable to get concrete implementation for identifier %s", $id)
             );
         }
 
@@ -155,6 +141,72 @@ class Container implements \ArrayAccess, ContainerInterface
     }
 
     /**
+     * Determine if defined abstract class name were in resolved concrete stack and it was a
+     * singleton.
+     *
+     * @param string $abstract The resolved abstract class name.
+     */
+    public function hasResolvedSingleton($abstract)
+    {
+        $flag = $this->getResolvedConcreteFlag($abstract);
+
+        return in_array('singleton', $flag, true);
+    }
+
+    /**
+     * Get singleton resolved concrete from defined abstract class name.
+     *
+     * @param string $abstract The resolved abstract class name.
+     */
+    public function getResolvedSingleton($abstract)
+    {
+        return ($this->hasResolvedSingleton($abstract)
+            ? $this->resolved[$abstract]['concrete']
+            : null);
+    }
+
+    /**
+     * Determine if defined abstract class name were in resolved concrete stack.
+     *
+     * @param string $abstract The resolved abstract class name.
+     */
+    public function hasResolvedConcrete($abstract)
+    {
+        return isset($this->resolved[$abstract]);
+    }
+
+    /**
+     * Get flag of resolved concrete behavior on abstract class name.
+     *
+     * @param string $abstract The resolved abstract class name.
+     */
+    public function getResolvedConcreteFlag($abstract)
+    {
+        if (!$this->hasResolvedConcrete($abstract)) {
+            throw Internal\Exception\ReflectionExceptionFactory::invalidArgument(
+                sprintf(
+                    "Parameter 1 of %s must be an abstract class name which exists in resolved concrete stack.",
+                     __METHOD__
+                );
+            );
+        }
+
+        return explode('|', $this->resolved[$abstract]['flag']);
+    }
+
+    /**
+     * Get resolved concrete from defined abstract class name.
+     *
+     * @param string $abstract The resolved abstract class name.
+     */
+    public function getResolvedConcrete($abstract)
+    {
+        return ($this->hasResolvedConcrete($abstract)
+            ? $this->resolved[$abstract]['concrete']
+            : null);
+    }
+
+    /**
      * Get list of unresolved class name from class binding stack.
      *
      * @return string
@@ -176,25 +228,6 @@ class Container implements \ArrayAccess, ContainerInterface
     }
 
     /**
-     * Determine if concrete dependency is exists.
-     *
-     * @param mixed $concrete The concrete dependency.
-     * @return bool
-     */
-    public function isConcreteExists($concrete)
-    {
-        foreach (array_values($this->bindings) as $value) {
-            if (in_array($concrete, $value, true)) {
-                $isConcreteExists = true;
-
-                break;
-            }
-        }
-
-        return (isset($isConcreteExists) ? $isConcreteExists : false);
-    }
-
-    /**
      * Determine if unresolved abstract is an interface.
      *
      * @param string $abstract The unresolved abstract name.
@@ -212,7 +245,7 @@ class Container implements \ArrayAccess, ContainerInterface
      * @param string $abstract The unresolved class name.
      * @return array
      */
-    public function getConcrete($abstract)
+    public function getAbstractDependencies($abstract)
     {
         return ($this->isAbstractExists($abstract) ? $this->bindings[$abstract] : null);
     }
@@ -226,11 +259,50 @@ class Container implements \ArrayAccess, ContainerInterface
      */
     protected function resolve($instance, $parameters = [])
     {
+        // If the current abstract is an interface,
+        // just return the concrete implementation to the callee.
+        if ($this->isInterface($instance)) {
+            return $this->getConcreteFromInterface($instance);
+        }
+
+        // If the current abstract type being managed as a singleton,
+        // just return it to the caller instead of reinstantiating it.
+        try {
+            return $this->getResolvedSingleton($instance);
+        } catch (\Exception $e) {
+        }
+        
+        $concrete = $this->getConcrete($instance);
+
+        if (!is_null($concrete)) {
+            $object = $this->build($instance,
+                $concrete instanceof \Closure ? $concrete($this) : $concrete);
+
+            if ($this->isShared($instance)) {
+                $this->markAsResolved($instance, $object, 'singleton');
+            } else {
+                $this->markAsResolved($instance, $object);
+            }
+        } else {
+            $object = $this->build($instance, $parameters);
+        }
+
+        return $object;
+    }
+
+    protected function build($instance, $parameters = [])
+    {
+        $parameters = (is_null($parameters)
+            ? []
+            : (is_array($parameters)
+                ? $parameters
+                : array_slice(func_get_args(), 1)));
+
+        var_dump($parameters);
+
         $reflector = Internal\ReflectionClassFactory::create($instance);
 
         if (!$this->hasConstructor($reflector)) {
-            $this->markAsResolved($instance);
-            
             return $this->resolveInstanceWithoutConstructor($reflector);
         }
 
@@ -244,9 +316,7 @@ class Container implements \ArrayAccess, ContainerInterface
             $params = $this->resolveMethodParameters($parameters);
         }
 
-        $this->markAsResolved($instance);
-
-        return $reflector->newInstanceArgs($params);
+        return $reflector->newInstanceArgs(!empty($parameters) ? $parameters : $params);
     }
 
     /**
@@ -270,8 +340,6 @@ class Container implements \ArrayAccess, ContainerInterface
                 if ($class instanceof \ReflectionClass) {
                     if ($class->isInterface()) {
                         $params[$key] = $this->getConcreteFromInterface($class->getName());
-
-                        $this->markAsResolved($class->getName());
                     } else {
                         $params[$key] = $this->circularDependencyResolver($class->getName());
                     }
@@ -283,7 +351,7 @@ class Container implements \ArrayAccess, ContainerInterface
                 if (is_string($value) && class_exists($value)) {
                     $params[$key] = $this->circularDependencyResolver($value);
                 } elseif ($value instanceof \Closure) {
-                    $params[$key] = ($this->isConcreteExists($value) ? $value($this) : $value);
+                    $params[$key] = $value($this);
                 } else {
                     $params[$key] = $value;
                 }
@@ -323,8 +391,6 @@ class Container implements \ArrayAccess, ContainerInterface
                     if ($class instanceof \ReflectionClass) {
                         if ($class->isInterface()) {
                             $param[$key] = $this->getConcreteFromInterface($class->getName());
-
-                            $this->markAsResolved($class->getName());
                         } else {
                             $param[$key] = $this->circularDependencyResolver($class->getName());
                         }
@@ -334,6 +400,19 @@ class Container implements \ArrayAccess, ContainerInterface
                 return $reflector->newInstanceArgs($param);
             }
         }
+    }
+
+    /**
+     * Get concrete implementation from given abstract.
+     *
+     * @param string $abstract
+     * @return \Closure|string|null
+     */
+    public function getConcrete($abstract)
+    {
+        return (isset($this->bindings[$abstract])
+            ? $this->bindings[$abstract]['concrete']
+            : null);
     }
 
     /**
@@ -350,17 +429,22 @@ class Container implements \ArrayAccess, ContainerInterface
             );
         }
 
-        if (sizeof($this->bindings[$interface]) > 1) {
-            throw Internal\Exception\ReflectionExceptionFactory::logic(
-                "An interface must only have 1 concrete implementation."
-            );
+        try {
+            return $this->getResolvedSingleton($interface);
+        } catch (\Exception $e) {
         }
 
-        $concrete = $this->bindings[$interface][0];
+        $concrete = $this->bindings[$interface]['concrete'];
 
-        return ($concrete instanceof \Closure ? $concrete($this)
-            : (is_string($concrete) && class_exists($concrete)
-                ? $this->resolve($concrete) : $concrete));
+        $object = $concrete instanceof \Closure ? $concrete($this) : $this->build($concrete);
+
+        if ($this->isShared($interface)) {
+            $this->markAsResolved($interface, $object, 'singleton');
+        } else {
+            $this->markAsResolved($interface, $object);
+        }
+
+        return $object;
     }
 
     /**
@@ -422,24 +506,32 @@ class Container implements \ArrayAccess, ContainerInterface
      * Mark resolved class name to true.
      *
      * @param string $abstract The resolved class name.
+     * @param object $resolvedInstance The object instance of resolved abstract.
+     * @param mixed $flag The concrete-resolving behavior.
      * @return void
      */
-    protected function markAsResolved($abstract)
+    protected function markAsResolved($abstract, $resolvedInstance, $flag = [])
     {
-        if ($this->isAbstractExists($abstract)) {
-            $this->resolved[$abstract] = true;
+        if (!is_array($flag)) {
+            $flag = array_slice(func_get_args(), 2);
+        }
 
-            unset($this->bindings[$abstract]);
+        if ($this->isAbstractExists($abstract)) {
+            $this->resolved[$abstract] = [
+                'concrete' => $resolvedInstance,
+                'resolved' => true,
+                'flag' => join('|', $flag)
+            ];
         }
     }
 
     /**
-     * Bind service into binding container stack.
+     * Register binding into container stack.
      *
      * @param string $abstract The unresolvable class name.
      * @param \Closure|string $concrete Closure or class name being bound to the class name.
      */
-    public function bind($abstract, $concrete = null)
+    public function bind($abstract, $concrete = null, $shared = false)
     {
         if (is_null($concrete)) {
             $concrete = $abstract;
@@ -449,11 +541,18 @@ class Container implements \ArrayAccess, ContainerInterface
             $concrete = $this->turnIntoResolvableClosure($abstract, $concrete);
         }
 
-        if (isset($this->bindings[$abstract])) {
-            array_push($this->bindings[$abstract], $concrete);
-        } else {
-            $this->bindings[$abstract] = [$concrete];
-        }
+        $this->bindings[$abstract] = compact('concrete', 'shared');
+    }
+
+    /**
+     * Register shared binding into container stack.
+     *
+     * @param string $abstract The unresolvable abstract
+     * @param \Closure|string|null The concrete form of supplied abstract.
+     */
+    public function singleton($abstract, $concrete = null)
+    {
+        $this->bind($abstract, $concrete, true);
     }
 
     /**
@@ -483,7 +582,7 @@ class Container implements \ArrayAccess, ContainerInterface
         
         $current = $this->make($instance);
 
-        $this->markAsResolved($instance);
+        var_dump($current);
 
         return call_user_func_array($current, $args);
     }
@@ -497,6 +596,23 @@ class Container implements \ArrayAccess, ContainerInterface
     public function isBound($abstract)
     {
         return $this->isAbstractExists($abstract);
+    }
+
+    /**
+     * Determine if a given type is shared.
+     *
+     * @param string $abstract
+     * @return bool
+     */
+    public function isShared($abstract)
+    {
+        if (!isset($this->bindings[$abstract])) {
+            throw Internal\Exception\ReflectionExceptionFactory::invalidArgument(
+                sprintf("Parameter 1 of %s must be valid keys in binding container stack.", __METHOD__)
+            );
+        }
+
+        return ($this->bindings[$abstract]['shared'] ? true : false);
     }
 
     /**

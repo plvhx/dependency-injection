@@ -239,19 +239,6 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf(\SplPriorityQueue::class, $a);
     }
 
-    /**
-     * @expectedException \LogicException
-     */
-    public function testCanThrowExceptionWhenGetConcreteImplementationFromInterface()
-    {
-        $container = new Container();
-
-        $container->bind(BaseInterface::class, Base::class);
-        $container->bind(BaseInterface::class, \SplPriorityQueue::class);
-
-        $a = $this->callNonPublicMethod($container, 'getConcreteFromInterface', [BaseInterface::class]);
-    }
-
     public function testIfCloneable()
     {
         $container = new Container();
@@ -313,35 +300,6 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($container->isAbstractExists(Foo::class));
     }
 
-    public function testIfConcreteExists()
-    {
-        $container = new Container();
-
-        $callback = function ($container) {
-            return $container->make(Base::class);
-        };
-
-        $container->bind(Foo::class, $callback);
-
-        $this->assertTrue($container->isConcreteExists($callback));
-    }
-
-    public function testCanMockAndDetermineIfConcreteExists()
-    {
-        $container = $this->getMock(Container::class);
-
-        $callback = function ($container) {
-            return $container->make(Base::class);
-        };
-
-        $container->expects($this->once())->method('bind');
-        $container->expects($this->any())->method('isConcreteExists')->willReturn(true);
-
-        $container->bind(Foo::class, $callback);
-
-        $this->assertTrue($container->isConcreteExists($callback));
-    }
-
     public function testIfAnInterface()
     {
         $container = new Container();
@@ -377,9 +335,9 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         });
 
         $this->assertTrue($container->isAbstractExists(Foo::class));
-        $this->assertInternalType('array', $container->getConcrete(Foo::class));
+        $this->assertInternalType('object', $container->getConcrete(Foo::class));
         $this->assertNotEmpty($container->getConcrete(Foo::class));
-        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class)[0]);
+        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class));
     }
 
     public function testCannotGetConcreteImplementation()
@@ -430,16 +388,16 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $container->bind(Foo::class, Base::class);
 
         $this->assertTrue($container->isAbstractExists(Foo::class));
-        $this->assertInternalType('array', $container->getConcrete(Foo::class));
+        $this->assertInternalType('object', $container->getConcrete(Foo::class));
         $this->assertNotEmpty($container->getConcrete(Foo::class));
-        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class)[0]);
+        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class));
 
         $container->bind(Base::class);
 
         $this->assertTrue($container->isAbstractExists(Base::class));
-        $this->assertInternalType('array', $container->getConcrete(Base::class));
+        $this->assertInternalType('object', $container->getConcrete(Base::class));
         $this->assertNotEmpty($container->getConcrete(Base::class));
-        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class)[0]);
+        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class));
     }
 
     public function testCanBindClosureConcreteIntoAbstract()
@@ -453,9 +411,9 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $container->bind(Foo::class, $callback);
 
         $this->assertTrue($container->isAbstractExists(Foo::class));
-        $this->assertInternalType('array', $container->getConcrete(Foo::class));
+        $this->assertInternalType('object', $container->getConcrete(Foo::class));
         $this->assertNotEmpty($container->getConcrete(Foo::class));
-        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class)[0]);
+        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class));
     }
 
     public function testCanMockThenBindConcreteIntoAbstract()
@@ -509,9 +467,9 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $container->bindIf(Foo::class, Base::class);
 
         $this->assertTrue($container->isAbstractExists(Foo::class));
-        $this->assertInternalType('array', $container->getConcrete(Foo::class));
+        $this->assertInternalType('object', $container->getConcrete(Foo::class));
         $this->assertNotEmpty($container->getConcrete(Foo::class));
-        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class)[0]);
+        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class));
     }
 
     public function testCanDoConditionalBindConcreteClosureIntoAbstract()
@@ -525,9 +483,9 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $container->bindIf(Foo::class, $callback);
 
         $this->assertTrue($container->isAbstractExists(Foo::class));
-        $this->assertInternalType('array', $container->getConcrete(Foo::class));
+        $this->assertInternalType('object', $container->getConcrete(Foo::class));
         $this->assertNotEmpty($container->getConcrete(Foo::class));
-        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class)[0]);
+        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class));
     }
 
     public function testCanMockThenDoConditionalBindConcreteIntoAbstract()
@@ -592,9 +550,9 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $container->bind(Foo::class, Base::class);
 
         $this->assertTrue($container->isAbstractExists(Foo::class));
-        $this->assertInternalType('array', $container->getConcrete(Foo::class));
+        $this->assertInternalType('object', $container->getConcrete(Foo::class));
         $this->assertNotEmpty($container->getConcrete(Foo::class));
-        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class)[0]);
+        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class));
 
         $container->callInstance(Foo::class, 'Paulus Gandung Prakosa');
     }
@@ -608,9 +566,9 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         });
 
         $this->assertTrue($container->isAbstractExists(Foo::class));
-        $this->assertInternalType('array', $container->getConcrete(Foo::class));
+        $this->assertInternalType('object', $container->getConcrete(Foo::class));
         $this->assertNotEmpty($container->getConcrete(Foo::class));
-        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class)[0]);
+        $this->assertInstanceOf(\Closure::class, $container->getConcrete(Foo::class));
 
         $container->callInstance(Foo::class, 'Paulus Gandung Prakosa');
     }
@@ -680,6 +638,38 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $container->callInstance(Foo::class, 'Paulus Gandung Prakosa');
     }
 
+    public function testCanSharedBindConcreteIntoAbstract()
+    {
+        $container = new Container();
+
+        $container->singleton(BaseInterface::class, Base::class);
+
+        $a = $container->make(BaseInterface::class);
+        $b = $container->make(BaseInterface::class);
+
+        $this->assertInstanceOf(BaseInterface::class, $a);
+        $this->assertInstanceOf(BaseInterface::class, $b);
+        $this->assertEquals($a, $b);
+        $this->assertSame($a, $b);
+    }
+
+    public function testCanSharedBindClosureIntoAbstract()
+    {
+        $container = new Container();
+
+        $container->singleton(BaseInterface::class, function ($container) {
+            return $container->make(Base::class);
+        });
+
+        $a = $container->make(BaseInterface::class);
+        $b = $container->make(BaseInterface::class);
+
+        $this->assertInstanceOf(BaseInterface::class, $a);
+        $this->assertInstanceOf(BaseInterface::class, $b);
+        $this->assertEquals($a, $b);
+        $this->assertSame($a, $b);
+    }
+
     public function testIfAbstractIsBound()
     {
         $container = new Container();
@@ -691,6 +681,83 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         });
 
         $this->assertTrue($container->isBound(Foo::class));
+    }
+
+    public function testCanResolveConcrete()
+    {
+        $container = new Container();
+
+        $container->singleton(BaseInterface::class, function ($container) {
+            return $container->make(Base::class);
+        });
+
+        $container->make(BaseInterface::class);
+
+        $this->assertInstanceOf(BaseInterface::class, $container->getResolvedConcrete(BaseInterface::class));
+    }
+
+    public function testCanGetAbstractDependencies()
+    {
+        $container = new Container();
+
+        $container->singleton(BaseInterface::class, function ($container) {
+            return $container->make(Base::class);
+        });
+
+        $a = $container->getAbstractDependencies(BaseInterface::class);
+
+        $this->assertInternalType('bool', $a['shared']);
+        $this->assertInstanceOf(\Closure::class, $a['concrete']);
+    }
+
+    public function testCanResolveSharedWithBoundDependency()
+    {
+        $container = new Container();
+
+        $container->singleton(Foo::class, Base::class);
+
+        $a = $container->make(Foo::class);
+
+        $this->assertInstanceOf(Foo::class, $a);
+    }
+
+    public function testCanResolveWithBoundDependency()
+    {
+        $container = new Container();
+
+        $container->bind(Foo::class, Base::class);
+
+        $a = $container->make(Foo::class);
+
+        $this->assertInstanceOf(Foo::class, $a);
+    }
+
+    public function testCanDirectlyResolveMethodParameters()
+    {
+        $container = new Container();
+
+        $this->callNonPublicMethod($container, 'resolveMethodParameters', [[function ($container) {
+            return $container->make(Base::class);
+        }]]);
+    }
+
+    public function testCanGetConcreteFromInterface()
+    {
+        $container = new Container();
+
+        $container->singleton(BaseInterface::class, Base::class);
+
+        $this->callNonPublicMethod($container, 'getConcreteFromInterface', [BaseInterface::class]);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     */
+    public function testIfAbstractSharedWithException()
+    {
+        $container = new Container();
+
+        $container->isShared(BaseInterface::class);
     }
 
     public function testCanResolveBaz()
