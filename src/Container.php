@@ -187,7 +187,7 @@ class Container implements \ArrayAccess, ContainerInterface
                 sprintf(
                     "Parameter 1 of %s must be an abstract class name which exists in resolved concrete stack.",
                      __METHOD__
-                );
+                )
             );
         }
 
