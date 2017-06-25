@@ -1,5 +1,7 @@
 # Simple Dependency Injection Library
 
+[![Join the chat at https://gitter.im/dependency-injection-container/Lobby](https://badges.gitter.im/dependency-injection-container/Lobby.svg)](https://gitter.im/dependency-injection-container/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Coverage Status](https://coveralls.io/repos/github/plvhx/dependency-injection/badge.svg)](https://coveralls.io/github/plvhx/dependency-injection)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/plvhx/dependency-injection/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/plvhx/dependency-injection/?branch=master)
 [![Build Status](https://scrutinizer-ci.com/g/plvhx/dependency-injection/badges/build.png?b=master)](https://scrutinizer-ci.com/g/plvhx/dependency-injection/build-status/master)
