@@ -31,11 +31,11 @@ namespace Unused;
 class Foo
 {
 	/**
-	 * @var \SplPriorityHeap
+	 * @var \SplPriorityQueue
 	 */
 	private $heap;
 
-	public function __construct(\SplPriorityHeap $heap)
+	public function __construct(\SplPriorityQueue $heap)
 	{
 		$this->heap = $heap;
 	}	
@@ -43,7 +43,7 @@ class Foo
 ```
 
 And you have a class that depends on class Unused\Foo, however class Unused\Foo
-depends on class \SplPriorityHeap
+depends on class \SplPriorityQueue
 ```php
 <?php
 
@@ -63,7 +63,7 @@ class Bar
 }
 ```
 
-You can resolve an instance of class Bar without resolving Bar and \SplPriorityHeap manually
+You can resolve an instance of class Bar without resolving Bar and \SplPriorityQueue manually
 ```php
 <?php
 
