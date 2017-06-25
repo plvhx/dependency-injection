@@ -298,8 +298,6 @@ class Container implements \ArrayAccess, ContainerInterface
                 ? $parameters
                 : array_slice(func_get_args(), 1)));
 
-        var_dump($parameters);
-
         $reflector = Internal\ReflectionClassFactory::create($instance);
 
         if (!$this->hasConstructor($reflector)) {
@@ -581,8 +579,6 @@ class Container implements \ArrayAccess, ContainerInterface
         $args = (is_array($args) ? $args : array_slice(func_get_args(), 1));
         
         $current = $this->make($instance);
-
-        var_dump($current);
 
         return call_user_func_array($current, $args);
     }
